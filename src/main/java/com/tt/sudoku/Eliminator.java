@@ -13,10 +13,6 @@ public class Eliminator {
     static List<Cell> excludeList = new ArrayList<>();
     private static String c1_linked = "c1-linked";
     private static String c2_linked = "c2-linked";
-    private static String linkOrder1 = "1221";
-    private static String linkOrder2 = "1212";
-    private static String linkOrder3 = "2121";
-    private static String linkOrder4 = "2112";
 
     public static void run() {
         Debug.println("eliminate..");
@@ -123,6 +119,8 @@ public class Eliminator {
         HashSet<StrongLink> set = new HashSet<>(strongLinks);
         Debug.println("distinct strong links: " + set.size());
 
+        // link orders of two links
+        String[] orders = {"1234", "1243", "3412", "3421"};
         ArrayList<StrongLink> list = new ArrayList<>(set);
         for (int i = 0; i < list.size(); i++) {
             for (int j = 0; j < list.size(); j++) {
@@ -133,47 +131,35 @@ public class Eliminator {
                 rest.remove(link1);
                 rest.remove(link2);
 
-                checkHeadAndTail(link1, link2, rest, linkOrder1);
-                if (!excludeList.isEmpty()) return;
-                checkHeadAndTail(link1, link2, rest, linkOrder2);
-                if (!excludeList.isEmpty()) return;
-                checkHeadAndTail(link1, link2, rest, linkOrder3);
-                if (!excludeList.isEmpty()) return;
-                checkHeadAndTail(link1, link2, rest, linkOrder4);
-                if (!excludeList.isEmpty()) return;
+
+                Cell[] cells = {link1.c1, link1.c2, link2.c1, link2.c2};
+                for (String order : orders) {
+                    Cell[] cells2 = new Cell[4];
+                    for (int k = 0; k < order.length(); k++) {
+                        char ch = order.charAt(k);
+                        cells2[k] = cells[Integer.parseInt(""+ch)-1];
+                    }
+                    checkHeadAndTail(cells2, rest);
+                    if(!excludeList.isEmpty()) return;
+                }
+
             }
         }
     }
 
-    private static void checkHeadAndTail(StrongLink link1, StrongLink link2, ArrayList<StrongLink> rest, String order) {
+    private static void checkHeadAndTail(Cell[] cells, ArrayList<StrongLink> rest) {
         LinkedList<Cell> head = new LinkedList<>();
+        head.add(cells[0]);
+        head.add(cells[1]);
         LinkedList<Cell> tail = new LinkedList<>();
-        if (order.equals(linkOrder1)) {
-            head.add(link1.c1);
-            head.add(link1.c2);
-            tail.add(link2.c2);
-            tail.add(link2.c1);
-        } else if (order.equals(linkOrder2)) {
-            head.add(link1.c1);
-            head.add(link1.c2);
-            tail.add(link2.c1);
-            tail.add(link2.c2);
-        } else if (order.equals(linkOrder3)) {
-            head.add(link1.c2);
-            head.add(link1.c1);
-            tail.add(link2.c2);
-            tail.add(link2.c1);
-        } else if (order.equals(linkOrder4)) {
-            head.add(link1.c2);
-            head.add(link1.c1);
-            tail.add(link2.c1);
-            tail.add(link2.c2);
-        }
+        tail.add(cells[2]);
+        tail.add(cells[3]);
         List<Cell> excludes = getExcludes(head.getFirst(), tail.getLast());
         if (!excludes.isEmpty() && linkUp(head, tail, rest)) {
             excludeList = excludes;
         }
     }
+
 
     private static boolean linkUp(LinkedList<Cell> head, LinkedList<Cell> tail, ArrayList<StrongLink> rest) {
         // chain cannot contains the next link
@@ -254,8 +240,6 @@ public class Eliminator {
                 e.excludes = new ArrayList<>(head.candidates);
                 e.excludes.remove(new Integer(head.num));
                 excludeList.add(e);
-//                head.candidates.clear();
-//                head.candidates.add(head.num);
 //                Debug.println(String.format("make: r%sc%s-%s", head.r + 1, head.c + 1, head.num));
             } else {
                 // loop
@@ -265,7 +249,6 @@ public class Eliminator {
                     e.excludes = new ArrayList<>(head.candidates);
                     e.excludes.removeAll(retain);
                     excludeList.add(e);
-//                    head.candidates.retainAll(retain);
 //                    Debug.println(String.format("retain: r%sc%s-%s", head.r + 1, head.c + 1, head.num + "," + tail.num));
                 }
             }
@@ -281,7 +264,6 @@ public class Eliminator {
                         Cell e = new Cell(cell);
                         e.excludes = Collections.singletonList(head.num);
                         excludeList.add(e);
-//                        cell.candidates.remove(new Integer(head.num));
 //                        Debug.println(String.format("exclude: r%sc%s-%s", cell.r + 1, cell.c + 1, head.num));
                     }
                 }
@@ -291,14 +273,12 @@ public class Eliminator {
                     Cell e = new Cell(head);
                     e.excludes = Collections.singletonList(tail.num);
                     excludeList.add(e);
-//                    head.candidates.remove(new Integer(tail.num));
 //                    Debug.println(String.format("exclude: r%sc%s-%s", head.r + 1, head.c + 1, tail.num));
                 }
                 if (tail.candidates.contains(head.num)) {
                     Cell e = new Cell(tail);
                     e.excludes = Collections.singletonList(head.num);
                     excludeList.add(e);
-//                    tail.candidates.remove(new Integer(head.num));
 //                    Debug.println(String.format("exclude: r%sc%s-%s", tail.r + 1, tail.c + 1, head.num));
                 }
             }
