@@ -2,19 +2,8 @@ package com.tt.sudoku;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.StringSelection;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,12 +22,7 @@ public class Board extends JPanel {
             @Override
             public void keyPressed(KeyEvent e) {
                 super.keyPressed(e);
-                if ((e.getKeyCode() == KeyEvent.VK_V) && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
-                    handlePaste();
-                }
-                if ((e.getKeyCode() == KeyEvent.VK_C) && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
-                    handleCopy();
-                }
+
             }
         });
         setFocusable(true);
@@ -54,96 +38,9 @@ public class Board extends JPanel {
         }
     }
 
-    private void handleCopy() {
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                List<Integer> candidates = cells[i][j].candidates;
-                if (candidates.size() == 1) {
-                    sb.append(candidates.get(0));
-                } else {
-                    sb.append(".");
-                }
-            }
-        }
-        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        StringSelection sel = new StringSelection(sb.toString());
-        clipboard.setContents(sel, sel);
-    }
 
-    private void handlePaste() {
-        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        try {
-            Object data = clipboard.getData(DataFlavor.stringFlavor);
-            String trim = data.toString().trim();
-            Debug.println(trim);
-
-            int length = trim.length();
-            if (length == rows * cols) {
-                parseData(trim);
-            } else {
-                Debug.println("data err");
-            }
-        } catch (UnsupportedFlavorException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void parseFromFile() {
-        Debug.println("parseFromFile..");
-        String file = "data.txt";
-        InputStream is = Board.class.getClassLoader().getResourceAsStream(file);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        List<String> list = new ArrayList<>();
-        while (true) {
-            try {
-                String line = reader.readLine();
-                if (line == null) break;
-
-                if (line.startsWith("|")) {
-                    String[] split = line.split(" ");
-                    for (String s : split) {
-                        if (s.matches("\\d+")) {
-                            list.add(s);
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        if (list.size() == 81) {
-            for (int i = 0; i < list.size(); i++) {
-                int r = i / rows;
-                int c = i % cols;
-                Cell cell = new Cell(r, c);
-                cell.candidates.clear();
-                String s = list.get(i);
-                for (int j = 0; j < s.length(); j++) {
-                    cell.candidates.add(Integer.parseInt("" + s.charAt(j)));
-                }
-                cells[r][c] = cell;
-            }
-        }
-        repaint();
-    }
-
-    public void parseData(String s) {
-        for (int i = 0; i < s.length(); i++) {
-            char ch = s.charAt(i);
-            int r = i / cols;
-            int c = i % cols;
-            if ('.' != ch) {
-                cells[r][c].candidates.clear();
-                cells[r][c].candidates.add(Integer.parseInt(ch + ""));
-            } else {
-                cells[r][c] = new Cell(r, c);
-            }
-        }
-        Eliminator.run();
-        repaint();
+    public int getCellWidth() {
+        return (this.getWidth() - startX * 2) / rows;
     }
 
     @Override
@@ -191,10 +88,6 @@ public class Board extends JPanel {
         }
     }
 
-    public int getCellWidth() {
-        return (this.getWidth() - startX * 2) / rows;
-    }
-
     public void paintChain(List<Cell> list) {
         if (list.size() <= 2) return;
         Graphics g = getGraphics();
@@ -210,6 +103,7 @@ public class Board extends JPanel {
             g.drawArc(p1.x, p1.y - size, size, size, 0, 360);
             g.drawArc(p2.x, p2.y - size, size, size, 0, 360);
         }
+        list.clear();
     }
 
     public void paintExcludeList(List<Cell> excludeList) {
@@ -223,5 +117,6 @@ public class Board extends JPanel {
                 g.drawArc(p1.x, p1.y - size, size, size, 0, 360);
             }
         }
+        excludeList.clear();
     }
 }

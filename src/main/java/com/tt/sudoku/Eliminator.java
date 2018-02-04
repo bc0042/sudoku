@@ -11,6 +11,12 @@ import java.util.stream.Collectors;
 public class Eliminator {
     static List<Cell> chain = new ArrayList<>();
     static List<Cell> excludeList = new ArrayList<>();
+    private static String c1_linked = "c1-linked";
+    private static String c2_linked = "c2-linked";
+    private static String linkOrder1 = "1221";
+    private static String linkOrder2 = "1212";
+    private static String linkOrder3 = "2121";
+    private static String linkOrder4 = "2112";
 
     public static void run() {
         Debug.println("eliminate..");
@@ -37,7 +43,7 @@ public class Eliminator {
 
 
     public static List<StrongLink> findStrongLinksByNum(int num) {
-        List<Cell> list = getCellsByCandidate(num);
+        List<Cell> list = getCellsContainsNum(num);
         List<StrongLink> strongLinks = new ArrayList<>();
         // strong link in rows
         Map<Integer, List<Cell>> map = list.stream().collect(Collectors.groupingBy(cell -> cell.r));
@@ -67,7 +73,7 @@ public class Eliminator {
         return strongLinks;
     }
 
-    private static List<Cell> getCellsByCandidate(int num) {
+    private static List<Cell> getCellsContainsNum(int num) {
         List<Cell> list = new ArrayList<>();
         for (int i = 0; i < Board.rows; i++) {
             for (int j = 0; j < Board.cols; j++) {
@@ -93,10 +99,16 @@ public class Eliminator {
         return list;
     }
 
+    public static void findAndExclude() {
+        findChain();
+        exclude();
+        run();
+    }
+
     /**
      * find all strong links
      * take two strong links
-     * if closed then linkup them
+     * if closed then link them up
      */
     public static void findChain() {
         List<StrongLink> strongLinks = new ArrayList<>();
@@ -121,63 +133,45 @@ public class Eliminator {
                 rest.remove(link1);
                 rest.remove(link2);
 
-                List<Cell> excludes1 = getExcludes(link1.c1, link2.c1);
-                if (!excludes1.isEmpty()) {
-                    LinkedList<Cell> head = new LinkedList<>();
-                    LinkedList<Cell> tail = new LinkedList<>();
-                    head.add(link1.c1);
-                    head.add(link1.c2);
-                    tail.add(link2.c2);
-                    tail.add(link2.c1);
-                    if (linkUp(head, tail, rest)) {
-                        excludeList = excludes1;
-                        return;
-                    }
-                }
-
-                List<Cell> excludes2 = getExcludes(link1.c1, link2.c2);
-                if (!excludes2.isEmpty()) {
-                    LinkedList<Cell> head = new LinkedList<>();
-                    LinkedList<Cell> tail = new LinkedList<>();
-                    head.add(link1.c1);
-                    head.add(link1.c2);
-                    tail.add(link2.c1);
-                    tail.add(link2.c2);
-                    if (linkUp(head, tail, rest)) {
-                        excludeList = excludes2;
-                        return;
-                    }
-                }
-
-
-                List<Cell> excludes3 = getExcludes(link1.c2, link2.c1);
-                if (!excludes3.isEmpty()) {
-                    LinkedList<Cell> head = new LinkedList<>();
-                    LinkedList<Cell> tail = new LinkedList<>();
-                    head.add(link1.c2);
-                    head.add(link1.c1);
-                    tail.add(link2.c2);
-                    tail.add(link2.c1);
-                    if (linkUp(head, tail, rest)) {
-                        excludeList = excludes3;
-                        return;
-                    }
-                }
-
-                List<Cell> excludes4 = getExcludes(link1.c2, link2.c2);
-                if (!excludes4.isEmpty()) {
-                    LinkedList<Cell> head = new LinkedList<>();
-                    LinkedList<Cell> tail = new LinkedList<>();
-                    head.add(link1.c2);
-                    head.add(link1.c1);
-                    tail.add(link2.c1);
-                    tail.add(link2.c2);
-                    if (linkUp(head, tail, rest)) {
-                        excludeList = excludes4;
-                        return;
-                    }
-                }
+                checkHeadAndTail(link1, link2, rest, linkOrder1);
+                if (!excludeList.isEmpty()) return;
+                checkHeadAndTail(link1, link2, rest, linkOrder2);
+                if (!excludeList.isEmpty()) return;
+                checkHeadAndTail(link1, link2, rest, linkOrder3);
+                if (!excludeList.isEmpty()) return;
+                checkHeadAndTail(link1, link2, rest, linkOrder4);
+                if (!excludeList.isEmpty()) return;
             }
+        }
+    }
+
+    private static void checkHeadAndTail(StrongLink link1, StrongLink link2, ArrayList<StrongLink> rest, String order) {
+        LinkedList<Cell> head = new LinkedList<>();
+        LinkedList<Cell> tail = new LinkedList<>();
+        if (order.equals(linkOrder1)) {
+            head.add(link1.c1);
+            head.add(link1.c2);
+            tail.add(link2.c2);
+            tail.add(link2.c1);
+        } else if (order.equals(linkOrder2)) {
+            head.add(link1.c1);
+            head.add(link1.c2);
+            tail.add(link2.c1);
+            tail.add(link2.c2);
+        } else if (order.equals(linkOrder3)) {
+            head.add(link1.c2);
+            head.add(link1.c1);
+            tail.add(link2.c2);
+            tail.add(link2.c1);
+        } else if (order.equals(linkOrder4)) {
+            head.add(link1.c2);
+            head.add(link1.c1);
+            tail.add(link2.c1);
+            tail.add(link2.c2);
+        }
+        List<Cell> excludes = getExcludes(head.getFirst(), tail.getLast());
+        if (!excludes.isEmpty() && linkUp(head, tail, rest)) {
+            excludeList = excludes;
         }
     }
 
@@ -186,14 +180,18 @@ public class Eliminator {
         if (head.contains(tail.getFirst()) || head.contains(tail.getLast())) return false;
 
         //debug
-//        if (head.getFirst().num == 6
-//                && head.getLast().num == 6
-//                && head.getFirst().r == 5 - 1
-//                && head.getFirst().c == 2 - 1
-//                && tail.getFirst().num == 5
-//                && tail.getLast().num == 5
+//        if (head.getFirst().num == 7
+//                && head.getLast().num == 7
+//                && head.getFirst().r == 2 - 1
+//                && head.getFirst().c == 7 - 1
+//
+//                && head.getLast().r == 2 - 1
+//                && head.getLast().c == 4 - 1
+//
+//                && tail.getFirst().num == 2
+//                && tail.getLast().num == 1
 //                ) {
-//            System.out.println();
+//            Debug.println();
 //        }
 
         if (head.size() == 2) {
@@ -212,30 +210,39 @@ public class Eliminator {
             LinkedList<Cell> head2 = new LinkedList<>(head);
             ArrayList<StrongLink> rest2 = new ArrayList<>(rest);
             if (isLinked(head.getLast(), next.c1)) {
-                head2.add(next.c1);
-                head2.add(next.c2);
-                if (isLinked(next.c2, tail.getFirst())) {
-                    head2.addAll(tail);
-                    chain = head2;
-                    return true;
-                } else {
-                    rest2.remove(i);
-                    return linkUp(head2, tail, rest2);
-                }
+                return linkUpRest(head2, tail, rest2, i, c1_linked);
             } else if (isLinked(head.getLast(), next.c2)) {
-                head2.add(next.c2);
-                head2.add(next.c1);
-                if (isLinked(next.c1, tail.getFirst())) {
-                    head2.addAll(tail);
-                    chain = head2;
-                    return true;
-                } else {
-                    rest2.remove(i);
-                    return linkUp(head2, tail, rest2);
-                }
+                return linkUpRest(head2, tail, rest2, i, c2_linked);
             }
         }
         return false;
+    }
+
+    private static boolean linkUpRest(LinkedList<Cell> head2, LinkedList<Cell> tail, ArrayList<StrongLink> rest2, int i, String type) {
+        boolean linked;
+        StrongLink next = rest2.get(i);
+        if (c1_linked.equals(type)) {
+            head2.add(next.c1);
+            head2.add(next.c2);
+        } else if (c2_linked.equals(type)) {
+            head2.add(next.c2);
+            head2.add(next.c1);
+        }
+        if (isLinked(head2.getLast(), tail.getFirst())) {
+            head2.addAll(tail);
+            chain = head2;
+            return true;
+        } else {
+            rest2.remove(i);
+            linked = linkUp(head2, tail, rest2);
+        }
+        if (linked) {
+            return true;
+        } else {
+            head2.removeLast();
+            head2.removeLast();
+            return linkUp(head2, tail, rest2);
+        }
     }
 
     private static List<Cell> getExcludes(Cell head, Cell tail) {
@@ -341,16 +348,18 @@ public class Eliminator {
     }
 
 
-    public static void hiddenSingle() {
+    public static void findHiddenSingle() {
         Debug.println("find hidden single..");
+        List<Cell> singles = new ArrayList<>();
         for (int num = 1; num <= Cell.maxNum; num++) {
-            List<Cell> list = getCellsByCandidate(num);
+            List<Cell> list = getCellsContainsNum(num);
             Map<Integer, List<Cell>> map = list.stream().collect(Collectors.groupingBy(cell -> cell.r));
             for (Map.Entry<Integer, List<Cell>> entry : map.entrySet()) {
                 if (entry.getValue().size() == 1) {
                     Cell cell = entry.getValue().get(0);
                     Debug.println(String.format("hidden single: %s, r%sc%s, row", num, cell.r + 1, cell.c + 1));
-                    cell.candidates.retainAll(Collections.singletonList(num));
+                    cell.num = num;
+                    singles.add(cell);
                 }
             }
             Map<Integer, List<Cell>> map2 = list.stream().collect(Collectors.groupingBy(cell -> cell.c));
@@ -358,7 +367,8 @@ public class Eliminator {
                 if (entry.getValue().size() == 1) {
                     Cell cell = entry.getValue().get(0);
                     Debug.println(String.format("hidden single: %s, r%sc%s, col", num, cell.r + 1, cell.c + 1));
-                    cell.candidates.retainAll(Collections.singletonList(num));
+                    cell.num = num;
+                    singles.add(cell);
                 }
             }
             Map<Point, List<Cell>> map3 = list.stream().collect(Collectors.groupingBy(
@@ -367,24 +377,27 @@ public class Eliminator {
                 if (entry.getValue().size() == 1) {
                     Cell cell = entry.getValue().get(0);
                     Debug.println(String.format("hidden single: %s, r%sc%s, block", num, cell.r + 1, cell.c + 1));
-                    cell.candidates.retainAll(Collections.singletonList(num));
-                    Debug.println(cell);
+                    cell.num = num;
+                    singles.add(cell);
                 }
             }
         }
+        for (Cell single : singles) {
+            single.candidates.clear();
+            single.candidates.add(single.num);
+        }
+        run();
     }
 
     public static void exclude() {
         if (chain != null && chain.size() > 2) {
             Debug.printChain(chain);
-            chain.clear();
         }
         if (excludeList != null) {
             Debug.printExcludeList(excludeList);
             for (Cell cell : excludeList) {
                 cell.candidates.removeAll(cell.excludes);
             }
-            excludeList.clear();
         }
     }
 }

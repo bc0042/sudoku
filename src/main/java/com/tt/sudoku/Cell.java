@@ -100,9 +100,8 @@ public class Cell {
         return "Cell{" +
                 "r=" + (r + 1) +
                 ", c=" + (c + 1) +
-                ", x=" + x +
-                ", y=" + y +
                 ", candidates=" + candidates +
+                ", excludes=" + excludes +
                 ", num=" + num +
                 '}';
     }
