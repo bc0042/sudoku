@@ -72,9 +72,9 @@ public class MyKeyListener extends KeyAdapter {
     }
 
     public static void handleFind() {
-        Eliminator.findAndExclude();
-        Main.paintChain(Eliminator.chain);
-        Main.paintExcludeList(Eliminator.excludeList);
-        Eliminator.findHiddenSingle();
+        Solver.findChain();
+        Main.paintChain(Solver.chain);
+        Main.paintExcludeList(Solver.excludeList);
+        Solver.findHiddenSingle();
     }
 }

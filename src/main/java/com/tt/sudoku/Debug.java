@@ -26,11 +26,11 @@ public class Debug {
         System.exit(11);
     }
 
-    public static void printChain(List<LinkPoint> list) {
+    public static void printChain(List<LinkNode> list) {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < list.size(); i += 2) {
-            LinkPoint p1 = list.get(i);
-            LinkPoint p2 = list.get(i + 1);
+            LinkNode p1 = list.get(i);
+            LinkNode p2 = list.get(i + 1);
             sb.append(String.format("%s==>%s-->", p1, p2));
         }
         println(sb.toString());

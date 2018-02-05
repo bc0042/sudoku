@@ -21,7 +21,7 @@ public class ParseHelper {
                 Board.cells[r][c] = new Cell(r, c);
             }
         }
-        Eliminator.checkCandidates();
+        Solver.checkCandidates();
         Main.refresh();
     }
 
@@ -61,6 +61,6 @@ public class ParseHelper {
                 Board.cells[r][c] = cell;
             }
         }
-        Eliminator.checkCandidates();
+        Solver.checkCandidates();
     }
 }

@@ -88,16 +88,16 @@ public class Board extends JPanel {
         }
     }
 
-    public void paintChain(List<LinkPoint> list) {
+    public void paintChain(List<LinkNode> list) {
         if (list.size() <= 2) return;
         Graphics g = getGraphics();
         g.setColor(Color.red);
         int cellWidth = getCellWidth();
         int size = (int) (cellWidth / Cell.factor);
         for (int i = 0; i < list.size(); i += 2) {
-            LinkPoint linkPoint1 = list.get(i);
+            LinkNode linkPoint1 = list.get(i);
             Cell c1 = linkPoint1.cells.get(0);
-            LinkPoint linkPoint2 = list.get(i + 1);
+            LinkNode linkPoint2 = list.get(i + 1);
             Cell c2 = linkPoint2.cells.get(0);
             Point p1 = c1.getCandidatePoint(c1.linkNum, cellWidth);
             Point p2 = c2.getCandidatePoint(c2.linkNum, cellWidth);

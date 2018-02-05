@@ -10,10 +10,10 @@ import java.util.stream.Collectors;
 /**
  * Created by BC on 2/5/18.
  */
-public class LinkPoint {
+public class LinkNode {
     List<Cell> cells = new ArrayList<>();
 
-    public int sameRow(LinkPoint p) {
+    public int sameRow(LinkNode p) {
         List<Cell> list = new ArrayList<>();
         list.addAll(this.cells);
         list.addAll(p.cells);
@@ -30,7 +30,7 @@ public class LinkPoint {
         return 0;
     }
 
-    public Integer sameCol(LinkPoint p) {
+    public Integer sameCol(LinkNode p) {
         List<Cell> list = new ArrayList<>();
         list.addAll(this.cells);
         list.addAll(p.cells);
@@ -47,7 +47,7 @@ public class LinkPoint {
         return 0;
     }
 
-    public Point sameBlock(LinkPoint p) {
+    public Point sameBlock(LinkNode p) {
         List<Cell> list = new ArrayList<>();
         list.addAll(this.cells);
         list.addAll(p.cells);
@@ -78,7 +78,7 @@ public class LinkPoint {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        LinkPoint linkPoint = (LinkPoint) o;
+        LinkNode linkPoint = (LinkNode) o;
         return Objects.equals(cells, linkPoint.cells);
     }
 
@@ -87,7 +87,7 @@ public class LinkPoint {
         return Objects.hash(cells);
     }
 
-    public List<Cell> addAll(LinkPoint p) {
+    public List<Cell> addAll(LinkNode p) {
         List<Cell> list = new ArrayList<>();
         list.addAll(this.cells);
         list.addAll(p.cells);
