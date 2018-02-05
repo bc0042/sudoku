@@ -12,6 +12,12 @@ public class ButtonPanel extends JPanel {
 
     private static Component btn2() {
         JButton b = new JButton("<HTML><U>R</U>efresh</HTML>");
+        b.addActionListener(new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Main.refresh();
+            }
+        });
         return b;
     }
 

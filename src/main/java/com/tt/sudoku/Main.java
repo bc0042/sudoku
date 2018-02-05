@@ -24,8 +24,8 @@ public class Main {
 //        String s = "9..6.47287..95...66...72...5.91.7..43845691721....3..9...2....7....962.12967.....";
 //        ParseHelper.parse(s);
         ParseHelper.parseFromFile();
-
         Eliminator.findHiddenSingle();
+        refresh();
     }
 
 
@@ -33,7 +33,7 @@ public class Main {
         board.repaint();
     }
 
-    public static void paintChain(List<Cell> chain) {
+    public static void paintChain(List<LinkPoint> chain) {
         board.paintChain(chain);
     }
 

@@ -7,28 +7,45 @@ import java.util.Objects;
  * Created by BC on 1/31/18.
  */
 public class StrongLink {
-    Cell c1;
-    Cell c2;
+    LinkPoint p1 = new LinkPoint();
+    LinkPoint p2 = new LinkPoint();
 
     public StrongLink(List<Cell> value, int num) {
-        this.c1 = new Cell(value.get(0));
-        this.c2 = new Cell(value.get(1));
-        this.c1.num = num;
-        this.c2.num = num;
+        Cell c1 = new Cell(value.get(0));
+        Cell c2 = new Cell(value.get(1));
+        c1.linkNum = num;
+        c2.linkNum = num;
+        this.p1.cells.add(c1);
+        this.p2.cells.add(c2);
     }
 
     public StrongLink(Cell cell) {
-        this.c1 = new Cell(cell);
-        this.c2 = new Cell(cell);
-        this.c1.num = cell.candidates.get(0);
-        this.c2.num = cell.candidates.get(1);
+        Cell c1 = new Cell(cell);
+        Cell c2 = new Cell(cell);
+        c1.linkNum = cell.candidates.get(0);
+        c2.linkNum = cell.candidates.get(1);
+        this.p1.cells.add(c1);
+        this.p2.cells.add(c2);
+    }
+
+    public StrongLink(List<Cell> list1, List<Cell> list2, int num) {
+        for (Cell cell : list1) {
+            Cell c1 = new Cell(cell);
+            c1.linkNum = num;
+            this.p1.cells.add(c1);
+        }
+        for (Cell cell : list2) {
+            Cell c2 = new Cell(cell);
+            c2.linkNum = num;
+            this.p2.cells.add(c2);
+        }
     }
 
     @Override
     public String toString() {
         return "StrongLink{" +
-                "c1=" + c1 +
-                ", c2=" + c2 +
+                "p1=" + p1 +
+                ", p2=" + p2 +
                 '}';
     }
 
@@ -37,19 +54,12 @@ public class StrongLink {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         StrongLink that = (StrongLink) o;
-        if (Objects.equals(c1, that.c2) &&
-                Objects.equals(c2, that.c1)) return true;
-        return Objects.equals(c1, that.c1) &&
-                Objects.equals(c2, that.c2);
+        return Objects.equals(p1, that.p1) &&
+                Objects.equals(p2, that.p2);
     }
 
     @Override
     public int hashCode() {
-
-        return Objects.hash(c1, c2);
-    }
-
-    public boolean contains(Cell cell) {
-        return this.c1.equals(cell) || this.c2.equals(cell);
+        return Objects.hash(p1, p2);
     }
 }

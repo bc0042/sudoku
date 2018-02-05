@@ -2,7 +2,6 @@ package com.tt.sudoku;
 
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -27,13 +26,12 @@ public class Debug {
         System.exit(11);
     }
 
-    public static void printChain(List<Cell> list) {
+    public static void printChain(List<LinkPoint> list) {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < list.size(); i += 2) {
-            Cell c1 = list.get(i);
-            Cell c2 = list.get(i + 1);
-            sb.append(String.format("r%sc%s-%s==>", c1.r + 1, c1.c + 1, c1.num));
-            sb.append(String.format("r%sc%s-%s-->", c2.r + 1, c2.c + 1, c2.num));
+            LinkPoint p1 = list.get(i);
+            LinkPoint p2 = list.get(i + 1);
+            sb.append(String.format("%s==>%s-->", p1, p2));
         }
         println(sb.toString());
     }

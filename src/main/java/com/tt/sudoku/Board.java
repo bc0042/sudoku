@@ -88,20 +88,29 @@ public class Board extends JPanel {
         }
     }
 
-    public void paintChain(List<Cell> list) {
+    public void paintChain(List<LinkPoint> list) {
         if (list.size() <= 2) return;
         Graphics g = getGraphics();
         g.setColor(Color.red);
         int cellWidth = getCellWidth();
         int size = (int) (cellWidth / Cell.factor);
         for (int i = 0; i < list.size(); i += 2) {
-            Cell c1 = list.get(i);
-            Cell c2 = list.get(i + 1);
-            Point p1 = c1.getCandidatePoint(c1.num, cellWidth);
-            Point p2 = c2.getCandidatePoint(c2.num, cellWidth);
+            LinkPoint linkPoint1 = list.get(i);
+            Cell c1 = linkPoint1.cells.get(0);
+            LinkPoint linkPoint2 = list.get(i + 1);
+            Cell c2 = linkPoint2.cells.get(0);
+            Point p1 = c1.getCandidatePoint(c1.linkNum, cellWidth);
+            Point p2 = c2.getCandidatePoint(c2.linkNum, cellWidth);
             g.drawLine(p1.x, p1.y, p2.x, p2.y);
-            g.drawArc(p1.x, p1.y - size, size, size, 0, 360);
-            g.drawArc(p2.x, p2.y - size, size, size, 0, 360);
+
+            for (Cell cell : linkPoint1.cells) {
+                p1 = cell.getCandidatePoint(cell.linkNum, cellWidth);
+                g.drawArc(p1.x, p1.y - size, size, size, 0, 360);
+            }
+            for (Cell cell : linkPoint2.cells) {
+                p2 = cell.getCandidatePoint(cell.linkNum, cellWidth);
+                g.drawArc(p2.x, p2.y - size, size, size, 0, 360);
+            }
         }
         list.clear();
     }

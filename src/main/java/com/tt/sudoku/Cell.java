@@ -13,7 +13,7 @@ public class Cell {
     int c;
     int x;
     int y;
-    int num;
+    int linkNum;
     List<Integer> candidates;
     List<Integer> excludes;
 
@@ -76,6 +76,33 @@ public class Cell {
         return new Point(x2 + c * size, y2 + r * size);
     }
 
+    public List<Point> getAffectCells() {
+        Cell cell = this;
+        List<Point> list = new ArrayList<>();
+        for (int i = 0; i < Board.rows; i++) {
+            if (i != cell.r) {
+                list.add(new Point(i, cell.c));
+            }
+        }
+        for (int i = 0; i < Board.cols; i++) {
+            if (i != cell.c) {
+                list.add(new Point(cell.r, i));
+            }
+        }
+        int r1 = cell.r / 3;
+        int c1 = cell.c / 3;
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                int r2 = r1 * 3 + i;
+                int c2 = c1 * 3 + j;
+                if (r2 != cell.r && c2 != cell.c) {
+                    list.add(new Point(r2, c2));
+                }
+            }
+        }
+        return list;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -85,14 +112,14 @@ public class Cell {
                 c == cell.c &&
                 x == cell.x &&
                 y == cell.y &&
-                num == cell.num &&
+                linkNum == cell.linkNum &&
                 Objects.equals(candidates, cell.candidates);
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(r, c, x, y, candidates, num);
+        return Objects.hash(r, c, x, y, candidates, linkNum);
     }
 
     @Override
@@ -102,7 +129,7 @@ public class Cell {
                 ", c=" + (c + 1) +
                 ", candidates=" + candidates +
                 ", excludes=" + excludes +
-                ", num=" + num +
+                ", linkNum=" + linkNum +
                 '}';
     }
 

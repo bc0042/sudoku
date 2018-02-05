@@ -188,58 +188,58 @@ public class Eliminator2 {
         List<Cell> excludeList = new ArrayList<>();
 
         if (head.overlap(tail)) {
-            if (head.num == tail.num) {
+            if (head.linkNum == tail.linkNum) {
                 // nice loop
                 Cell e = new Cell(head);
                 e.excludes = new ArrayList<>(head.candidates);
-                e.excludes.remove(head.num);
+                e.excludes.remove(head.linkNum);
                 excludeList.add(e);
                 head.candidates.clear();
-                head.candidates.add(head.num);
-//                Debug.println(String.format("make: r%sc%s-%s", head.r + 1, head.c + 1, head.num));
+                head.candidates.add(head.linkNum);
+//                Debug.println(String.format("make: r%sc%s-%s", head.r + 1, head.c + 1, head.linkNum));
             } else {
                 // loop
                 if (head.candidates.size() > 2) {
-                    List<Integer> retain = Arrays.asList(head.num, tail.num);
+                    List<Integer> retain = Arrays.asList(head.linkNum, tail.linkNum);
                     Cell e = new Cell(head);
                     e.excludes = new ArrayList<>(head.candidates);
                     e.excludes.removeAll(retain);
                     excludeList.add(e);
                     head.candidates.retainAll(retain);
-//                    Debug.println(String.format("retain: r%sc%s-%s", head.r + 1, head.c + 1, head.num + "," + tail.num));
+//                    Debug.println(String.format("retain: r%sc%s-%s", head.r + 1, head.c + 1, head.linkNum + "," + tail.linkNum));
                 }
             }
         } else {
             // not the same cell
-            if (head.num == tail.num) {
+            if (head.linkNum == tail.linkNum) {
                 List<Point> list1 = getAffectPoints(head);
                 List<Point> list2 = getAffectPoints(tail);
                 list1.retainAll(list2);
                 for (Point p : list1) {
                     Cell cell = Board.cells[p.x][p.y];
-                    if (cell.candidates.contains(head.num)) {
+                    if (cell.candidates.contains(head.linkNum)) {
                         Cell e = new Cell(cell);
-                        e.excludes = Collections.singletonList(head.num);
+                        e.excludes = Collections.singletonList(head.linkNum);
                         excludeList.add(e);
-                        cell.candidates.remove(new Integer(head.num));
-//                        Debug.println(String.format("exclude: r%sc%s-%s", cell.r + 1, cell.c + 1, head.num));
+                        cell.candidates.remove(new Integer(head.linkNum));
+//                        Debug.println(String.format("exclude: r%sc%s-%s", cell.r + 1, cell.c + 1, head.linkNum));
                     }
                 }
             } else if (head.r == tail.r || head.c == tail.c || head.sameBlock(tail)) {
-                // head num not equals to tail num
-                if (head.candidates.contains(tail.num)) {
+                // head linkNum not equals to tail linkNum
+                if (head.candidates.contains(tail.linkNum)) {
                     Cell e = new Cell(head);
-                    e.excludes = Collections.singletonList(tail.num);
+                    e.excludes = Collections.singletonList(tail.linkNum);
                     excludeList.add(e);
-                    head.candidates.remove(new Integer(tail.num));
-//                    Debug.println(String.format("exclude: r%sc%s-%s", head.r + 1, head.c + 1, tail.num));
+                    head.candidates.remove(new Integer(tail.linkNum));
+//                    Debug.println(String.format("exclude: r%sc%s-%s", head.r + 1, head.c + 1, tail.linkNum));
                 }
-                if (tail.candidates.contains(head.num)) {
+                if (tail.candidates.contains(head.linkNum)) {
                     Cell e = new Cell(tail);
-                    e.excludes = Collections.singletonList(head.num);
+                    e.excludes = Collections.singletonList(head.linkNum);
                     excludeList.add(e);
-                    tail.candidates.remove(new Integer(head.num));
-//                    Debug.println(String.format("exclude: r%sc%s-%s", tail.r + 1, tail.c + 1, head.num));
+                    tail.candidates.remove(new Integer(head.linkNum));
+//                    Debug.println(String.format("exclude: r%sc%s-%s", tail.r + 1, tail.c + 1, head.linkNum));
                 }
             }
         }
@@ -248,10 +248,10 @@ public class Eliminator2 {
 
     private static boolean isLinked(LinkedList<Cell> chain, Cell next) {
         Cell prev = chain.getLast();
-        if (prev.overlap(next) && prev.num != next.num) {
+        if (prev.overlap(next) && prev.linkNum != next.linkNum) {
             return true;
         }
-        if (prev.num == next.num && !chain.contains(next) &&
+        if (prev.linkNum == next.linkNum && !chain.contains(next) &&
                 (prev.r == next.r || prev.c == next.c || prev.sameBlock(next))) {
             return true;
         }
