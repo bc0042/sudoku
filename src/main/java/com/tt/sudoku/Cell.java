@@ -1,9 +1,8 @@
 package com.tt.sudoku;
 
 import java.awt.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Created by BC on 1/31/18.
@@ -76,17 +75,17 @@ public class Cell {
         return new Point(x2 + c * size, y2 + r * size);
     }
 
-    public List<Point> getAffectCells() {
+    public Set<Point> getAffectPoints() {
         Cell cell = this;
-        List<Point> list = new ArrayList<>();
+        Set<Point> set = new HashSet<>();
         for (int i = 0; i < Board.rows; i++) {
             if (i != cell.r) {
-                list.add(new Point(i, cell.c));
+                set.add(new Point(i, cell.c));
             }
         }
         for (int i = 0; i < Board.cols; i++) {
             if (i != cell.c) {
-                list.add(new Point(cell.r, i));
+                set.add(new Point(cell.r, i));
             }
         }
         int r1 = cell.r / 3;
@@ -96,11 +95,11 @@ public class Cell {
                 int r2 = r1 * 3 + i;
                 int c2 = c1 * 3 + j;
                 if (r2 != cell.r && c2 != cell.c) {
-                    list.add(new Point(r2, c2));
+                    set.add(new Point(r2, c2));
                 }
             }
         }
-        return list;
+        return set;
     }
 
     @Override

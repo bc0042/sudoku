@@ -73,7 +73,7 @@ public class MyKeyListener extends KeyAdapter {
 
     public static void handleFind() {
         Solver.findChain();
-        Main.paintChain(Solver.chain);
+//        Main.paintChain(Solver.steps);
         Main.paintExcludeList(Solver.excludeList);
         Solver.findHiddenSingle();
     }

@@ -1,9 +1,6 @@
 package com.tt.sudoku;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Created by BC on 1/31/18.
@@ -11,7 +8,7 @@ import java.util.Objects;
 public class StrongLink {
     LinkNode node1 = new LinkNode();
     LinkNode node2 = new LinkNode();
-    private static String[] orders = {"1234", "1243", "3412", "3421"};
+    private static String[] orders = {"1234", "1243", "2134", "2143"};
 
     public StrongLink(List<Cell> value, int num) {
         Cell c1 = new Cell(value.get(0));
@@ -66,11 +63,11 @@ public class StrongLink {
         return Objects.hash(node1, node2);
     }
 
-    public List<List<LinkNode>> arrange(StrongLink link) {
-        List<List<LinkNode>> list = new ArrayList<>();
+    public List<LinkedList<LinkNode>> arrange(StrongLink link) {
+        List<LinkedList<LinkNode>> list = new ArrayList<>();
         List<LinkNode> cells = Arrays.asList(this.node1, this.node2, link.node1, link.node2);
         for (String order : orders) {
-            List<LinkNode> cells2 = new ArrayList<>();
+            LinkedList<LinkNode> cells2 = new LinkedList<>();
             for (int k = 0; k < order.length(); k++) {
                 char ch = order.charAt(k);
                 cells2.add(cells.get(Integer.parseInt("" + ch) - 1));

@@ -9,11 +9,9 @@ import java.util.stream.Collectors;
  * Created by BC on 1/31/18.
  */
 public class Solver {
-    static List<LinkNode> chain = new ArrayList<>();
     static List<Cell> excludeList = new ArrayList<>();
-    private static String p1_linked = "c1-linked";
-    private static String p2_linked = "c2-linked";
-    private static int maxSteps = 7;
+    private static int maxSteps = 6 * 2;
+    private static ListMap listMap;
 
     public static void checkCandidates() {
         Debug.println("eliminate..");
@@ -29,7 +27,7 @@ public class Solver {
 
     private static void excludeByNum(Cell cell) {
         Integer num = cell.candidates.get(0);
-        for (Point p : cell.getAffectCells()) {
+        for (Point p : cell.getAffectPoints()) {
             Cell cell1 = Board.cells[p.x][p.y];
             if (cell1.candidates.remove(num) && cell1.candidates.size() == 1) {
                 // if only one candidate, check again
@@ -39,20 +37,20 @@ public class Solver {
     }
 
 
-    public static List<StrongLink> findStrongLinksByNum(int num) {
+    public static Set<StrongLink> findStrongLinksByNum(int num) {
         List<Cell> list = getCellsContainsNum(num);
-        List<StrongLink> strongLinks = new ArrayList<>();
+        Set<StrongLink> strongLinks = new HashSet<>();
         // strong link in rows
         Map<Integer, List<Cell>> map = list.stream().collect(Collectors.groupingBy(cell -> cell.r));
         for (Map.Entry<Integer, List<Cell>> entry : map.entrySet()) {
             if (entry.getValue().size() == 2) {
                 StrongLink sl = new StrongLink(entry.getValue(), num);
                 strongLinks.add(sl);
-//            } else if (entry.getValue().size() > 2) {
-//                StrongLink groupedSL = groupedStrongLink(entry.getValue(), num);
-//                if (groupedSL != null) {
-//                    strongLinks.add(groupedSL);
-//                }
+            } else if (entry.getValue().size() > 2) {
+                StrongLink groupedSL = groupedStrongLink(entry.getValue(), num);
+                if (groupedSL != null) {
+                    strongLinks.add(groupedSL);
+                }
             }
         }
         // strong link in cols
@@ -117,296 +115,191 @@ public class Solver {
     }
 
     public static void findChain() {
-        findChain2();
-        exclude();
-        checkCandidates();
+        findStrongLinks();
+        findFirstChain();
+//        exclude();
+//        checkCandidates();
     }
 
-    public static void findChain2() {
-        List<StrongLink> strongLinks = findStrongLinks();
-        for (int i = 0; i < strongLinks.size(); i++) {
-            for (int j = i + 1; j < strongLinks.size(); j++) {
-                StrongLink link1 = strongLinks.get(i);
-                StrongLink link2 = strongLinks.get(j);
-                ArrayList<StrongLink> rest = new ArrayList<>(strongLinks);
-                rest.remove(link1);
-                rest.remove(link2);
+    public static void findFirstChain() {
+        for (Map.Entry<Integer, Collection<StrongLink>> entry : listMap.entrySet()) {
+            Collection<StrongLink> links = entry.getValue();
+            for (StrongLink link : links) {
 
-                List<List<LinkNode>> arrange = link1.arrange(link2);
-                for (List<LinkNode> a : arrange) {
-                    List<Cell> excludes = checkBothEnds(a, rest);
-                    if (excludes != null) {
-                        excludeList = excludes;
+                LinkedList<StrongLink> takenLinks = new LinkedList<>();
+                takenLinks.add(link);
+                LinkedList<LinkNode> steps = new LinkedList<>();
+
+                //12
+//                LinkedList<LinkNode> steps = new LinkedList<>();
+                steps.add(link.node1);
+                steps.add(link.node2);
+                boolean stop = findNextStep(takenLinks, steps);
+                if (stop) {
+                    return;
+                } else {
+                    //21
+                    steps = new LinkedList<>();
+                    steps.add(link.node2);
+                    steps.add(link.node1);
+                    if (findNextStep(takenLinks, steps)) {
                         return;
                     }
                 }
-
-
             }
         }
-    }
 
-    private static List<StrongLink> findStrongLinks() {
-        List<StrongLink> strongLinks = new ArrayList<>();
-        for (int i = 1; i <= Cell.maxNum; i++) {
-            List<StrongLink> list2 = Solver.findStrongLinksByNum(i);
-            strongLinks.addAll(list2);
-        }
-        // xy links
-        strongLinks.addAll(Solver.findXYLinks());
 
-        Debug.println("all strong links: " + strongLinks.size());
-        HashSet<StrongLink> set = new HashSet<>(strongLinks);
-        Debug.println("distinct strong links: " + set.size());
-        return new ArrayList<>(set);
-    }
-
-    private static List<Cell> checkBothEnds(List<LinkNode> cells, ArrayList<StrongLink> restLinks) {
-        LinkedList<LinkNode> headPoints = new LinkedList<>();
-        headPoints.add(cells.get(0));
-        headPoints.add(cells.get(1));
-        LinkedList<LinkNode> tailPoints = new LinkedList<>();
-        tailPoints.add(cells.get(2));
-        tailPoints.add(cells.get(3));
-        List<Cell> excludes = getExcludes(headPoints.getFirst(), tailPoints.getLast());
-        if (!excludes.isEmpty() && linkUp(headPoints, tailPoints, restLinks)) {
-            return excludes;
-        }
-        return null;
-    }
-
-    private static boolean linkUp(LinkedList<LinkNode> headPoints, LinkedList<LinkNode> tailPoints, ArrayList<StrongLink> restLinks) {
-
-        if (headPoints.size() > maxSteps) return false;
-
-        // chain cannot contains the next link
-        if (headPoints.contains(tailPoints.getFirst()) || headPoints.contains(tailPoints.getLast())) return false;
-
-        //debug
-//        if (head.getFirst().linkNum == 7
-//                && head.getLast().linkNum == 7
-//                && head.getFirst().r == 2 - 1
-//                && head.getFirst().c == 7 - 1
+//        for (int i = 0; i < strongLinks.size(); i++) {
+//            for (int j = 0; j < strongLinks.size(); j++) {
+//                if (i == j) continue;
+//                StrongLink link1 = strongLinks.get(i);
+//                StrongLink link2 = strongLinks.get(j);
+//                ArrayList<StrongLink> restLinks = new ArrayList<>(strongLinks);
+//                restLinks.remove(link1);
+//                restLinks.remove(link2);
 //
-//                && head.getLast().r == 2 - 1
-//                && head.getLast().c == 4 - 1
-//
-//                && tail.getFirst().linkNum == 2
-//                && tail.getLast().linkNum == 1
-//                ) {
-//            Debug.println();
+//                List<LinkedList<LinkNode>> arrange = link1.arrange(link2);
+//                for (LinkedList<LinkNode> endPoints : arrange) {
+//                    List<LinkNode> steps = new ArrayList<>();
+//                    if (endPoints.getFirst().close(endPoints.getLast()) && findNextStep(endPoints, restLinks, steps)) {
+//                        // find excludes
+//                        return;
+//                    }
+//                }
+//            }
 //        }
+    }
 
-        if (headPoints.size() == 2) {
-            if (isLinked(headPoints.getLast(), tailPoints.getFirst())) {
-                headPoints.addAll(tailPoints);
-                chain = headPoints;
-                return true;
+    private static boolean findNextStep(LinkedList<StrongLink> takenLinks, LinkedList<LinkNode> steps) {
+        if (steps.size() > maxSteps) return false;
+
+        if (steps.getFirst().close(steps.getLast())) {
+            Debug.printSteps(steps);
+            return true;
+        }
+
+        LinkNode last = steps.getLast();
+        int linkNum = last.getFirstCell().linkNum;
+
+        // link by number
+        Collection<StrongLink> links = listMap.get(linkNum);
+        for (StrongLink next : links) {
+            if(takenLinks.contains(next)) continue;
+            if (last.link(next.node1) && !next.node2.overlap(steps)) {
+                LinkedList<StrongLink> takenLinks2 = new LinkedList<>(takenLinks);
+                LinkedList<LinkNode> steps2 = new LinkedList<>(steps);
+                takenLinks2.add(next);
+                steps2.add(next.node1);
+                steps2.add(next.node2);
+                return findNextStep(takenLinks2, steps2);
             }
+            if (last.link(next.node2) && !next.node1.overlap(steps)) {
+                LinkedList<StrongLink> takenLinks2 = new LinkedList<>(takenLinks);
+                LinkedList<LinkNode> steps2 = new LinkedList<>(steps);
+                takenLinks2.add(next);
+                steps2.add(next.node2);
+                steps2.add(next.node1);
+                return findNextStep(takenLinks2, steps2);
+            }
+        }
+
+        // link by cell
+        List<StrongLink> overlap = listMap.getOverlap(last);
+
+
+        return false;
+    }
+
+    /**
+     *  // debug
+     if (steps.size() > 1) {
+     if (steps.get(0).getFirstCell().linkNum == 7
+     //                    && steps.get(0).getFirstCell().r == 6 - 1
+     && steps.get(1).getFirstCell().linkNum == 7
+     //                    && steps.get(2).getFirstCell().linkNum == 7
+     //                    && steps.get(3).getFirstCell().linkNum == 5
+     //                    && steps.get(4).getFirstCell().linkNum == 5
+     //                    && steps.get(5).getFirstCell().linkNum == 9
+     //                    && steps.get(5).getFirstCell().r == 9 - 1
+     ) {
+     //                System.out.println();
+     }
+     }
+     *
+     *
+     */
+
+    private static boolean findNextStep(List<LinkNode> endPoints, ArrayList<StrongLink> restLinks, List<LinkNode> steps) {
+
+
+
+        if (steps.size() > maxSteps) return false;
+
+        if (steps.isEmpty()) {
+            steps.add(endPoints.get(0));
+            steps.add(endPoints.get(1));
         }
 
         for (int i = 0; i < restLinks.size(); i++) {
             StrongLink next = restLinks.get(i);
-            // chain cannot contains the next link
-            if (headPoints.contains(next.node1) || headPoints.contains(next.node2)) continue;
+            // steps cannot contains the next node
+            if (steps.contains(next.node1) || steps.contains(next.node2)) continue;
 
-            LinkedList<LinkNode> headPoints2 = new LinkedList<>(headPoints);
+            boolean linkHalf = false;
+            LinkedList<LinkNode> steps2 = new LinkedList<>(steps);
             ArrayList<StrongLink> rest2 = new ArrayList<>(restLinks);
-            if (isLinked(headPoints.getLast(), next.node1)) {
-                return linkUpRest(headPoints2, tailPoints, rest2, i, p1_linked);
-            } else if (isLinked(headPoints.getLast(), next.node2)) {
-                return linkUpRest(headPoints2, tailPoints, rest2, i, p2_linked);
+            if (steps2.getLast().link(next.node1)) {
+                steps2.add(next.node1);
+                steps2.add(next.node2);
+                linkHalf = true;
+            } else if (steps2.getLast().link(next.node2)) {
+                steps2.add(next.node2);
+                steps2.add(next.node1);
+                linkHalf = true;
             }
+
+
+            if (linkHalf && steps2.getLast().link(endPoints.get(2))) {
+                steps2.add(endPoints.get(2));
+                steps2.add(endPoints.get(3));
+                Debug.printSteps(steps2);
+//                Solver.steps = steps2;
+                return true;
+            } else if (linkHalf) {
+                rest2.remove(i);
+                boolean done = findNextStep(endPoints, rest2, steps2);
+                if (done) {
+                    return done;
+                } else {
+                    steps2.removeLast();
+                    steps2.removeLast();
+//                    rest2 = new ArrayList<>(restLinks);
+                    return findNextStep(endPoints, rest2, steps2);
+                }
+            }
+
         }
         return false;
     }
 
-    private static boolean linkUpRest(LinkedList<LinkNode> headPoints2, LinkedList<LinkNode> tailPoints, ArrayList<StrongLink> rest2, int i, String type) {
-        boolean linked;
-        StrongLink next = rest2.get(i);
-        if (p1_linked.equals(type)) {
-            headPoints2.add(next.node1);
-            headPoints2.add(next.node2);
-        } else if (p2_linked.equals(type)) {
-            headPoints2.add(next.node2);
-            headPoints2.add(next.node1);
+    private static void findStrongLinks() {
+        listMap = new ListMap();
+        for (int i = 1; i <= Cell.maxNum; i++) {
+            Set<StrongLink> set = Solver.findStrongLinksByNum(i);
+            listMap.add(i, set);
         }
-        if (isLinked(headPoints2.getLast(), tailPoints.getFirst())) {
-            headPoints2.addAll(tailPoints);
-            chain = headPoints2;
-            return true;
-        } else {
-            rest2.remove(i);
-            linked = linkUp(headPoints2, tailPoints, rest2);
+
+        // xy links
+        List<StrongLink> xyLinks = Solver.findXYLinks();
+        for (StrongLink link : xyLinks) {
+            int linkNum1 = link.node1.getFirstCell().linkNum;
+            int linkNum2 = link.node2.getFirstCell().linkNum;
+            listMap.add(linkNum1, Collections.singletonList(link));
+            listMap.add(linkNum2, Collections.singletonList(link));
         }
-        if (linked) {
-            return true;
-        } else {
-            headPoints2.removeLast();
-            headPoints2.removeLast();
-            return linkUp(headPoints2, tailPoints, rest2);
-        }
+        Debug.println("link size: " + listMap.size());
     }
-
-    private static boolean isLinked(LinkNode p1, LinkNode p2) {
-        if (p1.cells.size() == 1 && p2.cells.size() == 1) {
-            Cell prev = p1.cells.get(0);
-            Cell next = p2.cells.get(0);
-            if (prev.overlap(next)) {
-                if (prev.linkNum != next.linkNum) {
-                    return true;
-                }
-            } else {
-                if (prev.linkNum == next.linkNum &&
-                        (prev.r == next.r || prev.c == next.c || prev.sameBlock(next))) {
-                    return true;
-                }
-            }
-        } else {
-            // grouped links
-            boolean sameNum = p1.cells.get(0).linkNum == p2.cells.get(0).linkNum;
-            int row = p1.sameRow(p2);
-            if (row != 0 && sameNum) {
-                return true;
-            }
-            int col = p1.sameCol(p2);
-            if (col != 0 && sameNum) {
-                return true;
-            }
-            Point block = p1.sameBlock(p2);
-            if (block != null && sameNum) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static List<Cell> getExcludes(LinkNode p1, LinkNode p2) {
-        if (p1.cells.size() == 1 && p2.cells.size() == 1) {
-            return getExcludes(p1.cells.get(0), p2.cells.get(0));
-        } else {
-            // grouped links
-            List<Cell> excludes = new ArrayList<>();
-            int linkNum = p1.cells.get(0).linkNum;
-            int linkNum2 = p2.cells.get(0).linkNum;
-            if (linkNum != linkNum2) return excludes;
-
-            int row = p1.sameRow(p2);
-            int col = p1.sameCol(p2);
-            if (row != 0) {
-                // same row, exclude cols in the links
-                List<Integer> cols = new ArrayList<>();
-                for (Cell cell : p1.addAll(p2)) {
-                    cols.add(cell.c);
-                }
-                for (int i = 0; i < Board.cols; i++) {
-                    Cell e = Board.cells[row][i];
-                    if (!cols.contains(i) && e.candidates.contains(linkNum)) {
-                        e.excludes = Collections.singletonList(linkNum);
-                        excludes.add(e);
-                    }
-                }
-            } else if (col != 0) {
-                // same col, exclude rows in the links
-                List<Integer> rows = new ArrayList<>();
-                for (Cell cell : p1.addAll(p2)) {
-                    rows.add(cell.r);
-                }
-                for (int i = 0; i < Board.rows; i++) {
-                    Cell e = Board.cells[i][col];
-                    if (!rows.contains(i) && e.candidates.contains(linkNum)) {
-                        e.excludes = Collections.singletonList(linkNum);
-                        excludes.add(e);
-                    }
-                }
-            } else {
-                if (p1.isSingle()) {
-                    List<Point> affectCells = p1.getSingle().getAffectCells();
-                    List<Point> affectCells2 = p2.getAffectBlock();
-                    if (affectCells2.retainAll(affectCells)) {
-                        for (Point point : affectCells2) {
-                            Cell e = Board.cells[point.x][point.y];
-                            if (e.candidates.contains(linkNum)) {
-                                e.excludes = Collections.singletonList(linkNum);
-                                excludes.add(e);
-                            }
-                        }
-                    }
-                }
-                if (p2.isSingle()) {
-                    List<Point> affectCells = p2.getSingle().getAffectCells();
-                    List<Point> affectCells2 = p1.getAffectBlock();
-                    if (affectCells2.retainAll(affectCells)) {
-                        for (Point point : affectCells2) {
-                            Cell e = Board.cells[point.x][point.y];
-                            if (e.candidates.contains(linkNum)) {
-                                e.excludes = Collections.singletonList(linkNum);
-                                excludes.add(e);
-                            }
-                        }
-                    }
-                }
-            }
-            return excludes;
-        }
-    }
-
-    private static List<Cell> getExcludes(Cell head, Cell tail) {
-        List<Cell> excludeList = new ArrayList<>();
-//        if (false) {
-        if (head.overlap(tail)) {
-            if (head.linkNum == tail.linkNum) {
-                // nice loop
-                Cell e = new Cell(head);
-                e.excludes = new ArrayList<>(head.candidates);
-                e.excludes.remove(new Integer(head.linkNum));
-                excludeList.add(e);
-//                Debug.println(String.format("make: r%sc%s-%s", head.r + 1, head.c + 1, head.linkNum));
-            } else {
-                // loop
-                if (head.candidates.size() > 2) {
-                    List<Integer> retain = Arrays.asList(head.linkNum, tail.linkNum);
-                    Cell e = new Cell(head);
-                    e.excludes = new ArrayList<>(head.candidates);
-                    e.excludes.removeAll(retain);
-                    excludeList.add(e);
-//                    Debug.println(String.format("retain: r%sc%s-%s", head.r + 1, head.c + 1, head.linkNum + "," + tail.linkNum));
-                }
-            }
-        } else {
-            // not the same cell
-            if (head.linkNum == tail.linkNum) {
-                List<Point> list1 = head.getAffectCells();
-                List<Point> list2 = tail.getAffectCells();
-                list1.retainAll(list2);
-                for (Point p : list1) {
-                    Cell cell = Board.cells[p.x][p.y];
-                    if (cell.candidates.contains(head.linkNum)) {
-                        Cell e = new Cell(cell);
-                        e.excludes = Collections.singletonList(head.linkNum);
-                        excludeList.add(e);
-//                        Debug.println(String.format("exclude: r%sc%s-%s", cell.r + 1, cell.c + 1, head.linkNum));
-                    }
-                }
-            } else if (head.r == tail.r || head.c == tail.c || head.sameBlock(tail)) {
-                // head linkNum not equals to tail linkNum
-                if (head.candidates.contains(tail.linkNum)) {
-                    Cell e = new Cell(head);
-                    e.excludes = Collections.singletonList(tail.linkNum);
-                    excludeList.add(e);
-//                    Debug.println(String.format("exclude: r%sc%s-%s", head.r + 1, head.c + 1, tail.linkNum));
-                }
-                if (tail.candidates.contains(head.linkNum)) {
-                    Cell e = new Cell(tail);
-                    e.excludes = Collections.singletonList(head.linkNum);
-                    excludeList.add(e);
-//                    Debug.println(String.format("exclude: r%sc%s-%s", tail.r + 1, tail.c + 1, head.linkNum));
-                }
-            }
-        }
-        return excludeList;
-    }
-
 
     public static void findHiddenSingle() {
         Debug.println("find hidden single..");
@@ -450,9 +343,9 @@ public class Solver {
     }
 
     public static void exclude() {
-        if (chain != null && chain.size() > 2) {
-            Debug.printChain(chain);
-        }
+//        if (steps != null && steps.size() > 2) {
+//            Debug.printSteps(steps);
+//        }
         if (excludeList != null) {
             Debug.printExcludeList(excludeList);
             for (Cell cell : excludeList) {

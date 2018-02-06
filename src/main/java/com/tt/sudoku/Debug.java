@@ -26,7 +26,7 @@ public class Debug {
         System.exit(11);
     }
 
-    public static void printChain(List<LinkNode> list) {
+    public static void printSteps(List<LinkNode> list) {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < list.size(); i += 2) {
             LinkNode p1 = list.get(i);
