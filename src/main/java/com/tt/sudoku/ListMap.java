@@ -41,6 +41,8 @@ public class ListMap {
     public List<StrongLink> getOverlap(LinkNode node) {
         // todo
         List<StrongLink> list = new ArrayList<>();
+        if(!node.isSingle()) return list;
+
         for (Map.Entry<Integer, Collection<StrongLink>> entry : entrySet()) {
             for (StrongLink link : entry.getValue()) {
                 if ((link.node1.isSingle() && node.overlap(link.node1))
