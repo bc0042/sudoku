@@ -2,6 +2,7 @@ package com.tt.sudoku;
 
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -39,6 +40,22 @@ public class Debug {
     public static void printExcludeList(List<Cell> excludeList) {
         for (Cell cell : excludeList) {
             println(String.format("exclude: r%sc%s-%s", cell.r + 1, cell.c + 1, cell.excludes));
+        }
+    }
+
+    public static void debug(LinkedList<LinkNode> steps) {
+        if (steps.size() > 5) {
+            if (steps.get(0).getFirstCell().linkNum == 7
+                    && steps.get(0).getFirstCell().r == 6 - 1
+                    && steps.get(1).getFirstCell().linkNum == 7
+                    && steps.get(2).getFirstCell().linkNum == 7
+                    && steps.get(3).getFirstCell().linkNum == 5
+                    && steps.get(4).getFirstCell().linkNum == 5
+                    && steps.get(5).getFirstCell().linkNum == 9
+                    && steps.get(5).getFirstCell().r == 9 - 1
+                    ) {
+                Debug.println();
+            }
         }
     }
 }

@@ -24,7 +24,7 @@ public class Main {
 //        String s = "9..6.47287..95...66...72...5.91.7..43845691721....3..9...2....7....962.12967.....";
 //        ParseHelper.parse(s);
         ParseHelper.parseFromFile();
-        Solver.findHiddenSingle();
+        SimpleSolver.hiddenSingle();
         refresh();
     }
 
@@ -33,11 +33,11 @@ public class Main {
         board.repaint();
     }
 
-    public static void paintChain(List<LinkNode> chain) {
+    public static void paintSteps(List<LinkNode> chain) {
         board.paintChain(chain);
     }
 
-    public static void paintExcludeList(List<Cell> excludeList) {
+    public static void paintExcludes(List<Cell> excludeList) {
         board.paintExcludeList(excludeList);
     }
 }

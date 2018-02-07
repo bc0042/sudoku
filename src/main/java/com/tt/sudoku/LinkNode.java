@@ -100,24 +100,6 @@ public class LinkNode {
         return cells.get(0);
     }
 
-    public List<Point> getAffectBlock() {
-        List<Point> list = new ArrayList<>();
-        List<Point> list2 = new ArrayList<>();
-        for (Cell cell : cells) {
-            Point point = new Point(cell.r, cell.c);
-            list.add(point);
-        }
-        Point first = list.get(0);
-        int r = first.x / 3;
-        int c = first.y / 3;
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                list2.add(new Point(r * 3 + i, c * 3 + j));
-            }
-        }
-        list2.removeAll(list);
-        return list2;
-    }
 
     private Set<Point> getAffectPoints() {
         if (this.isSingle()) {
@@ -158,20 +140,8 @@ public class LinkNode {
         }
     }
 
-    private boolean overlap(Cell cell) {
-        for (Cell cell1 : this.cells) {
-            if(cell1.overlap(cell)){
-                return true;
-            }
-        }
-        return false;
-    }
-
     public boolean close(LinkNode node) {
-        if (this.isSingle() && node.overlap(this.getFirstCell())) {
-            return false;
-        }
-        if (node.isSingle() && this.overlap(node.getFirstCell())) {
+        if (this.overlap(node) || node.overlap(this)) {
             return false;
         }
 
@@ -202,6 +172,41 @@ public class LinkNode {
         return false;
     }
 
+    public List<Cell> exclude(LinkNode node) {
+        List<Cell> list = new ArrayList<>();
+        int linkNum1 = this.getFirstCell().linkNum;
+        int linkNum2 = node.getFirstCell().linkNum;
+        if (linkNum1 == linkNum2) {
+            Set<Point> affectPoints = this.getAffectPoints();
+            Set<Point> affectPoints2 = node.getAffectPoints();
+            boolean retain = affectPoints.retainAll(affectPoints2);
+            if (retain) {
+                for (Point p : affectPoints) {
+                    Cell cell = Board.cells[p.x][p.y];
+                    boolean contains = cell.candidates.contains(linkNum1);
+                    if (contains) {
+                        cell.excludes = Collections.singletonList(linkNum1);
+                        list.add(cell);
+                    }
+                }
+            }
+        } else {
+            // different link number
+            if (this.sameRow(node) != 0 || this.sameCol(node) != 0 || this.sameBlock(node) != null) {
+                if (this.isSingle() && this.getFirstCell().candidates.contains(linkNum2)) {
+                    this.getFirstCell().excludes = Collections.singletonList(linkNum2);
+                    list.add(this.getFirstCell());
+                }
+                if (node.isSingle() && node.getFirstCell().candidates.contains(linkNum1)) {
+                    node.getFirstCell().excludes = Collections.singletonList(linkNum1);
+                    list.add(node.getFirstCell());
+                }
+
+            }
+        }
+        return list;
+    }
+
     public boolean link(LinkNode node) {
         if (this.getFirstCell().linkNum == node.getFirstCell().linkNum) {
             if (this.sameRow(node) != 0 || this.sameCol(node) != 0 || this.sameBlock(node) != null) {
@@ -216,10 +221,10 @@ public class LinkNode {
         return false;
     }
 
-    public boolean overlap(LinkedList<LinkNode> steps) {
+    private boolean overlap(LinkNode node) {
         for (Cell cell : this.cells) {
-            for (LinkNode step : steps) {
-                if (step.overlap(cell)) {
+            for (Cell cell1 : node.cells) {
+                if(cell1.overlap(cell)){
                     return true;
                 }
             }
@@ -227,12 +232,15 @@ public class LinkNode {
         return false;
     }
 
-    public boolean overlap(LinkNode node) {
-        for (Cell cell : this.cells) {
-            if(node.overlap(cell)){
-                return true;
-            }
+    public boolean singleOverlap(LinkNode node) {
+        if(this.isSingle() && node.isSingle() && !this.sameLinkNum(node)
+                && this.getFirstCell().overlap(node.getFirstCell())){
+            return true;
         }
         return false;
+    }
+
+    private boolean sameLinkNum(LinkNode node) {
+        return this.getFirstCell().linkNum == node.getFirstCell().linkNum;
     }
 }

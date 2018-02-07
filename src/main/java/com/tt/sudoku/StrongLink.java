@@ -1,6 +1,8 @@
 package com.tt.sudoku;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 /**
  * Created by BC on 1/31/18.
@@ -8,7 +10,6 @@ import java.util.*;
 public class StrongLink {
     LinkNode node1 = new LinkNode();
     LinkNode node2 = new LinkNode();
-    private static String[] orders = {"1234", "1243", "2134", "2143"};
 
     public StrongLink(List<Cell> value, int num) {
         Cell c1 = new Cell(value.get(0));
@@ -41,6 +42,11 @@ public class StrongLink {
         }
     }
 
+    public StrongLink(LinkNode node1, LinkNode node2) {
+        this.node1 = node1;
+        this.node2 = node2;
+    }
+
     @Override
     public String toString() {
         return "StrongLink{" +
@@ -63,17 +69,21 @@ public class StrongLink {
         return Objects.hash(node1, node2);
     }
 
-    public List<LinkedList<LinkNode>> arrange(StrongLink link) {
-        List<LinkedList<LinkNode>> list = new ArrayList<>();
-        List<LinkNode> cells = Arrays.asList(this.node1, this.node2, link.node1, link.node2);
-        for (String order : orders) {
-            LinkedList<LinkNode> cells2 = new LinkedList<>();
-            for (int k = 0; k < order.length(); k++) {
-                char ch = order.charAt(k);
-                cells2.add(cells.get(Integer.parseInt("" + ch) - 1));
-            }
-            list.add(cells2);
+    public void paintMe(Graphics g, int cellWidth) {
+        int size = (int) (cellWidth / Cell.factor);
+        Cell c1 = node1.cells.get(0);
+        Cell c2 = node2.cells.get(0);
+        Point p1 = c1.getCandidatePoint(c1.linkNum, cellWidth);
+        Point p2 = c2.getCandidatePoint(c2.linkNum, cellWidth);
+        g.drawLine(p1.x, p1.y, p2.x, p2.y);
+
+        for (Cell cell : node1.cells) {
+            p1 = cell.getCandidatePoint(cell.linkNum, cellWidth);
+            g.drawArc(p1.x, p1.y - size, size, size, 0, 360);
         }
-        return list;
+        for (Cell cell : node2.cells) {
+            p2 = cell.getCandidatePoint(cell.linkNum, cellWidth);
+            g.drawArc(p2.x, p2.y - size, size, size, 0, 360);
+        }
     }
 }

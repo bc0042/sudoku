@@ -1,19 +1,17 @@
 package com.tt.sudoku;
 
-import com.sun.org.apache.xerces.internal.xs.StringList;
-
 import java.util.*;
 
 /**
  * Created by BC on 2/6/18.
  */
 public class ListMap {
-    private static Map<Integer, Collection<StrongLink>> map = new HashMap<>();
+    private static Map<Integer, Set<StrongLink>> map = new HashMap<>();
     private int size = 0;
 
-    public void add(int num, Collection<StrongLink> c) {
+    public void add(int num, Set<StrongLink> c) {
         size += c.size();
-        Collection<StrongLink> set2 = map.get(num);
+        Set<StrongLink> set2 = map.get(num);
         if (set2 == null) {
             map.put(num, c);
         } else {
@@ -21,7 +19,7 @@ public class ListMap {
         }
     }
 
-    public Set<Map.Entry<Integer, Collection<StrongLink>>> entrySet() {
+    public Set<Map.Entry<Integer, Set<StrongLink>>> entrySet() {
         return map.entrySet();
     }
 
@@ -34,23 +32,27 @@ public class ListMap {
         return size;
     }
 
-    public Collection<StrongLink> get(int num) {
+    public Set<StrongLink> get(int num) {
+        // new hashset to avoid ConcurrentModificationException
         return map.get(num);
     }
 
-    public List<StrongLink> getOverlap(LinkNode node) {
-        // todo
-        List<StrongLink> list = new ArrayList<>();
-        if(!node.isSingle()) return list;
+    public Set<StrongLink> getOverlap(LinkNode node) {
+        Set<StrongLink> set = new HashSet<>();
+        if (!node.isSingle()) return set;
 
-        for (Map.Entry<Integer, Collection<StrongLink>> entry : entrySet()) {
+        for (Map.Entry<Integer, Set<StrongLink>> entry : entrySet()) {
             for (StrongLink link : entry.getValue()) {
-                if ((link.node1.isSingle() && node.overlap(link.node1))
-                        || (link.node2.isSingle() && node.overlap(link.node2))) {
-                    list.add(link);
+                if (link.node1.singleOverlap(node) || link.node2.singleOverlap(node)) {
+                    set.add(link);
                 }
             }
         }
-        return list;
+        return set;
+    }
+
+    public void clear() {
+        size = 0;
+        map.clear();
     }
 }
