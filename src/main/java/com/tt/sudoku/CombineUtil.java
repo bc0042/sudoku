@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * Created by BC on 2/7/18.
  */
-public class MyUtil {
+public class CombineUtil {
 
     private static List<int[]> list = new ArrayList<>();
 
@@ -15,7 +15,7 @@ public class MyUtil {
         list.clear();
         int[] a = new int[n];
         combine(m, n, a);
-        return list;
+        return new ArrayList<>(list);
     }
 
     private static void combine(int m, int n, int[] a) {

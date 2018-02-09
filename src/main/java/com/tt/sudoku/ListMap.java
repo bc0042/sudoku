@@ -1,6 +1,7 @@
 package com.tt.sudoku;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by BC on 2/6/18.
@@ -54,5 +55,31 @@ public class ListMap {
     public void clear() {
         size = 0;
         map.clear();
+    }
+
+    public Set<StrongLink> getPossibleLinks(LinkedList<LinkNode> headNodes) {
+        LinkNode last = headNodes.getLast();
+        int linkNum = last.getFirstCell().linkNum;
+        // link by number
+        Set<StrongLink> links = get(linkNum);
+        // link by cell
+        Set<StrongLink> links2 = getOverlap(last);
+        links2.addAll(links);
+        return links2.stream().filter(link -> {
+            if (headNodes.contains(link.node1) && headNodes.contains(link.node2)) {
+                return false;
+            } else {
+                return true;
+            }
+        }).collect(Collectors.toSet());
+    }
+
+    public void addAll(List<StrongLink> list) {
+        for (StrongLink link : list) {
+            int linkNum1 = link.node1.getFirstCell().linkNum;
+            int linkNum2 = link.node2.getFirstCell().linkNum;
+            add(linkNum1, new HashSet<>(Collections.singletonList(link)));
+            add(linkNum2, new HashSet<>(Collections.singletonList(link)));
+        }
     }
 }
