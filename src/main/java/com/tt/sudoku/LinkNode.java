@@ -18,6 +18,9 @@ public class LinkNode {
         Map<Integer, List<Cell>> map = list.stream().collect(Collectors.groupingBy(cell -> cell.r));
         if (map.size() == 1) {
             Integer row = map.entrySet().iterator().next().getKey();
+            if(node.cells.isEmpty()){
+                return row;
+            }
             if (this.isSingle() && !node.cells.contains(this.getFirstCell())) {
                 return row;
             }
@@ -25,7 +28,7 @@ public class LinkNode {
                 return row;
             }
         }
-        return 0;
+        return -1;
     }
 
     public int sameCol(LinkNode node) {
@@ -35,6 +38,9 @@ public class LinkNode {
         Map<Integer, List<Cell>> map = list.stream().collect(Collectors.groupingBy(cell -> cell.c));
         if (map.size() == 1) {
             Integer col = map.entrySet().iterator().next().getKey();
+            if(node.cells.isEmpty()){
+                return col;
+            }
             if (this.isSingle() && !node.cells.contains(this.getFirstCell())) {
                 return col;
             }
@@ -42,7 +48,7 @@ public class LinkNode {
                 return col;
             }
         }
-        return 0;
+        return -1;
     }
 
     public Point sameBlock(LinkNode node) {
@@ -107,35 +113,33 @@ public class LinkNode {
         } else {
             Set<Point> set = new HashSet<>();
             int row = this.sameRow(new LinkNode());
-            if (row != 0) {
+            if (row != -1) {
                 for (int i = 0; i < Board.cols; i++) {
                     set.add(new Point(row, i));
                 }
             } else {
                 int col = this.sameCol(new LinkNode());
-                if (col != 0) {
+                if (col != -1) {
                     for (int i = 0; i < Board.rows; i++) {
                         set.add(new Point(i, col));
                     }
+                }else{
+                    int r1 = this.getFirstCell().r / 3;
+                    int c1 = this.getFirstCell().c / 3;
+                    for (int i = 0; i < 3; i++) {
+                        for (int j = 0; j < 3; j++) {
+                            int r2 = r1 * 3 + i;
+                            int c2 = c1 * 3 + j;
+                            set.add(new Point(r2, c2));
+                        }
+                    }
+
                 }
             }
 
-            int r1 = this.getFirstCell().r / 3;
-            int c1 = this.getFirstCell().c / 3;
-            for (int i = 0; i < 3; i++) {
-                for (int j = 0; j < 3; j++) {
-                    int r2 = r1 * 3 + i;
-                    int c2 = c1 * 3 + j;
-                    set.add(new Point(r2, c2));
-                }
-            }
-
-            List<Point> list = new ArrayList<>();
             for (Cell cell : this.cells) {
-                list.add(new Point(cell.r, cell.c));
+                set.remove(new Point(cell.r, cell.c));
             }
-
-            set.removeAll(list);
             return set;
         }
     }
@@ -159,7 +163,7 @@ public class LinkNode {
             }
         } else {
             // different link number
-            if (this.sameRow(node) != 0 || this.sameCol(node) != 0 || this.sameBlock(node) != null) {
+            if (this.sameRow(node) != -1 || this.sameCol(node) != -1 || this.sameBlock(node) != null) {
                 if (this.isSingle() && this.getFirstCell().candidates.contains(node.getFirstCell().linkNum)) {
                     return true;
                 }
@@ -192,7 +196,7 @@ public class LinkNode {
             }
         } else {
             // different link number
-            if (this.sameRow(node) != 0 || this.sameCol(node) != 0 || this.sameBlock(node) != null) {
+            if (this.sameRow(node) != -1 || this.sameCol(node) != -1 || this.sameBlock(node) != null) {
                 if (this.isSingle() && this.getFirstCell().candidates.contains(linkNum2)) {
                     this.getFirstCell().excludes = Collections.singletonList(linkNum2);
                     list.add(this.getFirstCell());
@@ -209,7 +213,7 @@ public class LinkNode {
 
     public boolean link(LinkNode node) {
         if (this.getFirstCell().linkNum == node.getFirstCell().linkNum) {
-            if (this.sameRow(node) != 0 || this.sameCol(node) != 0 || this.sameBlock(node) != null) {
+            if (this.sameRow(node) != -1 || this.sameCol(node) != -1 || this.sameBlock(node) != null) {
                 return true;
             }
         } else {

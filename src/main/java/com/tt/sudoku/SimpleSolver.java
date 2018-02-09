@@ -115,14 +115,15 @@ public class SimpleSolver {
             set.addAll(cell.candidates);
         }
         ArrayList<Integer> candidates = new ArrayList<>(set);
-        List<int[]> combinations = MyUtil.getCombinations(candidates.size(), size);
+        List<int[]> combinations = CombineUtil.getCombinations(candidates.size(), size);
         for (int[] c : combinations) {
             List<Integer> subSet = new ArrayList<>();
             for (int i = 0; i < c.length; i++) {
                 subSet.add(candidates.get(c[i]));
             }
-            Map<Boolean, List<Cell>> collect = list.stream().collect(Collectors.groupingBy(
-                    cell -> new ArrayList<>(cell.candidates).removeAll(subSet)));
+//            Map<Boolean, List<Cell>> collect = list.stream().collect(Collectors.groupingBy(
+//                    cell -> new ArrayList<>(cell.candidates).removeAll(subSet)));
+            HashMap<Boolean, List<Cell>> collect = null;
             for (Map.Entry<Boolean, List<Cell>> entry : collect.entrySet()) {
                 if (entry.getKey() && entry.getValue().size() == size) {
                     return subSet;

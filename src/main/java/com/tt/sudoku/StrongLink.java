@@ -10,6 +10,7 @@ import java.util.List;
 public class StrongLink {
     LinkNode node1 = new LinkNode();
     LinkNode node2 = new LinkNode();
+    private static String[] orders = {"1234", "1243", "2134", "2143"};
 
     public StrongLink(List<Cell> value, int num) {
         Cell c1 = new Cell(value.get(0));
@@ -60,6 +61,9 @@ public class StrongLink {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         StrongLink that = (StrongLink) o;
+        if(this.node1.equals(that.node2) && this.node2.equals(that.node1)){
+            return true;
+        }
         return Objects.equals(node1, that.node1) &&
                 Objects.equals(node2, that.node2);
     }
@@ -86,4 +90,19 @@ public class StrongLink {
             g.drawArc(p2.x, p2.y - size, size, size, 0, 360);
         }
     }
+
+    public List<LinkNode[]> getOrders(StrongLink link2) {
+        List<LinkNode[]> list = new ArrayList<>();
+        LinkNode[] nodes = {this.node1, this.node2, link2.node1, link2.node2};
+        for (String order : orders) {
+            LinkNode[] nodes2 = new LinkNode[4];
+            for (int i = 0; i < order.length(); i++) {
+                char ch = order.charAt(i);
+                nodes2[i] = nodes[Integer.parseInt(ch+"")-1];
+            }
+            list.add(nodes2);
+        }
+        return list;
+    }
+
 }

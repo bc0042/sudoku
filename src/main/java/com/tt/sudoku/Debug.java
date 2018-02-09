@@ -2,7 +2,6 @@ package com.tt.sudoku;
 
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -27,7 +26,7 @@ public class Debug {
         System.exit(11);
     }
 
-    public static void printSteps(List<LinkNode> list) {
+    public static void printChain(List<LinkNode> list) {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < list.size(); i += 2) {
             LinkNode p1 = list.get(i);
@@ -37,22 +36,20 @@ public class Debug {
         println(sb.toString());
     }
 
-    public static void printExcludeList(List<Cell> excludeList) {
-        for (Cell cell : excludeList) {
-            println(String.format("exclude: r%sc%s-%s", cell.r + 1, cell.c + 1, cell.excludes));
-        }
-    }
-
-    public static void debug(LinkedList<LinkNode> steps) {
-        if (steps.size() > 5) {
-            if (steps.get(0).getFirstCell().linkNum == 7
-                    && steps.get(0).getFirstCell().r == 6 - 1
-                    && steps.get(1).getFirstCell().linkNum == 7
-                    && steps.get(2).getFirstCell().linkNum == 7
-                    && steps.get(3).getFirstCell().linkNum == 5
-                    && steps.get(4).getFirstCell().linkNum == 5
-                    && steps.get(5).getFirstCell().linkNum == 9
-                    && steps.get(5).getFirstCell().r == 9 - 1
+    public static void debug(List<LinkNode> steps) {
+        int head = 0; // 0 or 3
+        if (steps.size() > 3) {
+            if (steps.get(head).getFirstCell().linkNum == 3
+                    && steps.get(head).cells.size() == 3
+                    && steps.get(head).getFirstCell().r == 8 - 1
+//                    && steps.get(3).getFirstCell().c == 4 - 1
+                    && steps.get(1).getFirstCell().linkNum == 3
+                    && steps.get(2).getFirstCell().linkNum == 3
+                    && steps.get(3-head).getFirstCell().linkNum == 3
+                    && steps.get(3-head).getFirstCell().r == 6 -1
+//                    && steps.get(4).getFirstCell().linkNum == 5
+//                    && steps.get(5).getFirstCell().linkNum == 9
+//                    && steps.get(5).getFirstCell().r == 9 - 1
                     ) {
                 Debug.println();
             }

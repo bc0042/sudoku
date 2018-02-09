@@ -5,11 +5,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ParseHelper {
 
+    static String dataFile = "data.txt";
+    ;
+
     public static void parse(String s) {
+        if (s.length() > Board.rows * Board.cols) {
+            String[] split = s.split("\n");
+            List<String> list = Arrays.asList(split);
+            parse2(list);
+            return;
+        }
         for (int i = 0; i < s.length(); i++) {
             char ch = s.charAt(i);
             int r = i / Board.cols;
@@ -25,27 +35,16 @@ public class ParseHelper {
         Main.refresh();
     }
 
-    public static void parseFromFile() {
-        Debug.println("parseFromFile..");
-        String file = "data.txt";
-        InputStream is = Board.class.getClassLoader().getResourceAsStream(file);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+    public static void parse2(List<String> data) {
         List<String> list = new ArrayList<>();
-        while (true) {
-            try {
-                String line = reader.readLine();
-                if (line == null) break;
-
-                if (line.startsWith("|")) {
-                    String[] split = line.split(" ");
-                    for (String s : split) {
-                        if (s.matches("\\d+")) {
-                            list.add(s);
-                        }
+        for (String line : data) {
+            if (line.startsWith("|")) {
+                String[] split2 = line.split(" ");
+                for (String s2 : split2) {
+                    if (s2.matches("\\d+")) {
+                        list.add(s2);
                     }
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
             }
         }
         if (list.size() == 81) {
@@ -54,13 +53,36 @@ public class ParseHelper {
                 int c = i % Board.cols;
                 Cell cell = new Cell(r, c);
                 cell.candidates.clear();
-                String s = list.get(i);
-                for (int j = 0; j < s.length(); j++) {
-                    cell.candidates.add(Integer.parseInt("" + s.charAt(j)));
+                String s3 = list.get(i);
+                for (int j = 0; j < s3.length(); j++) {
+                    cell.candidates.add(Integer.parseInt("" + s3.charAt(j)));
                 }
                 Board.cells[r][c] = cell;
             }
         }
         SimpleSolver.checkCandidates();
+    }
+
+
+    public static void parseFromFile() {
+        try {
+            Debug.println("parseFromFile..");
+            List<String> data = getDatafile();
+            parse2(data);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static List<String> getDatafile() throws IOException {
+        InputStream is = Board.class.getClassLoader().getResourceAsStream(dataFile);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        List<String> list = new ArrayList<>();
+        while (true) {
+            String line = reader.readLine();
+            if (line == null) break;
+            list.add(line + "\n");
+        }
+        return list;
     }
 }

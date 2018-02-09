@@ -2,6 +2,7 @@ package com.tt.sudoku;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -33,11 +34,11 @@ public class Main {
         board.repaint();
     }
 
-    public static void paintSteps(List<LinkNode> chain) {
+    public static void paintChain(List<LinkNode> chain) {
         board.paintChain(chain);
     }
 
-    public static void paintExcludes(List<Cell> excludeList) {
-        board.paintExcludeList(excludeList);
+    public static void paintExcludes(List<Cell> excludes) {
+        board.paintExcludeList(excludes);
     }
 }
