@@ -57,24 +57,17 @@ public class ListMap {
         map.clear();
     }
 
-    public Set<StrongLink> getPossibleLinks(LinkedList<LinkNode> headNodes) {
-        LinkNode last = headNodes.getLast();
+    public Set<StrongLink> getPossibleLinks(LinkNode last) {
         int linkNum = last.getFirstCell().linkNum;
         // link by number
         Set<StrongLink> links = get(linkNum);
         // link by cell
         Set<StrongLink> links2 = getOverlap(last);
         links2.addAll(links);
-        return links2.stream().filter(link -> {
-            if (headNodes.contains(link.node1) && headNodes.contains(link.node2)) {
-                return false;
-            } else {
-                return true;
-            }
-        }).collect(Collectors.toSet());
+        return links2.stream().collect(Collectors.toSet());
     }
 
-    public void addAll(List<StrongLink> list) {
+    public void addAll(Collection<StrongLink> list) {
         for (StrongLink link : list) {
             int linkNum1 = link.node1.getFirstCell().linkNum;
             int linkNum2 = link.node2.getFirstCell().linkNum;

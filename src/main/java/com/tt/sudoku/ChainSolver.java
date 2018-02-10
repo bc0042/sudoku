@@ -10,8 +10,9 @@ import java.util.stream.Collectors;
  */
 public class ChainSolver {
     static int maxSteps = 2 * 2;
+    static int alsSize = 2;
+    static boolean alsEnable = false;
     private static ListMap linkMap = new ListMap();
-
 
     public static boolean findChain() {
         findLinkMap();
@@ -26,9 +27,9 @@ public class ChainSolver {
             List<LinkNode[]> orders = link1.getOrders(link2);
             for (LinkNode[] headAndTail : orders) {
 //                Debug.debug(Arrays.asList(headAndTail));
-                if(headAndTail[0].close(headAndTail[3])){
+                if (headAndTail[0].close(headAndTail[3])) {
                     List<LinkNode> chain = findSteps(headAndTail);
-                    if (chain !=null) {
+                    if (chain != null) {
                         Debug.printChain(chain);
                         Main.paintChain(chain);
                         exclude(chain);
@@ -41,72 +42,59 @@ public class ChainSolver {
     }
 
     private static List<LinkNode> findSteps(LinkNode[] nodes) {
-        if(nodes[1].link(nodes[2])){
+        if (nodes[1].link(nodes[2])) {
             // 2 strong links
             return Arrays.asList(nodes);
-        }else{
+        } else {
             LinkedList<LinkNode> headNodes = new LinkedList<>();
             headNodes.add(nodes[0]);
             headNodes.add(nodes[1]);
             LinkedList<LinkNode> tailNodes = new LinkedList<>();
             tailNodes.add(nodes[2]);
             tailNodes.add(nodes[3]);
-            return findSteps(headNodes, tailNodes, null);
+            return findSteps(headNodes, tailNodes);
         }
     }
 
-    private static LinkedList<LinkNode> findSteps(LinkedList<LinkNode> headNodes, LinkedList<LinkNode> tailNodes, List<StrongLink> deadLinks) {
-        if(headNodes.size()+2 >= maxSteps) return null;
-
-        Set<StrongLink> possibleLinks = linkMap.getPossibleLinks(headNodes);
-        if(deadLinks != null){
-//            possibleLinks.removeAll(deadLinks); // too slow
-            Iterator<StrongLink> itr = possibleLinks.iterator();
-            while(itr.hasNext()){
-                StrongLink next = itr.next();
-                for (StrongLink deadLink : deadLinks) {
-                    if(next.equals(deadLink)) itr.remove();
+    private static LinkedList<LinkNode> findSteps(LinkedList<LinkNode> headNodes, LinkedList<LinkNode> tailNodes) {
+        Debug.debug(headNodes, tailNodes);
+        while (true) {
+            Set<StrongLink> possibleLinks = linkMap.getPossibleLinks(headNodes.getLast());
+            for (StrongLink next : possibleLinks) {
+                if (headNodes.size() >= maxSteps) {
+                    return null;
                 }
-            }
-        }
-        LinkedList<LinkNode> headNodes2 = new LinkedList<>(headNodes);
-        for (StrongLink next : possibleLinks) {
-            if(headNodes2.contains(next.node1) || headNodes2.contains(next.node2)){
-                continue;
-            }
+                if (headNodes.contains(next.node1) || headNodes.contains(next.node2)) {
+                    continue;
+                }
 
-            if(headNodes.getLast().link(next.node1)){
-                headNodes2.add(next.node1);
-                headNodes2.add(next.node2);
-            }else if(headNodes.getLast().link(next.node2)){
-                headNodes2.add(next.node2);
-                headNodes2.add(next.node1);
-            }else{
-                continue;
-            }
+                if (headNodes.getLast().link(next.node1)) {
+                    headNodes.add(next.node1);
+                    headNodes.add(next.node2);
+                } else if (headNodes.getLast().link(next.node2)) {
+                    headNodes.add(next.node2);
+                    headNodes.add(next.node1);
+                } else {
+                    continue;
+                }
 
-            if(headNodes2.getLast().link(tailNodes.getFirst())){
-                headNodes2.addAll(tailNodes);
-                return headNodes2;
-            }else{
-                LinkedList<LinkNode> ret = findSteps(headNodes2, tailNodes, null);
-                if(ret != null){
-                    return ret;
-                }else{
-                    LinkNode node1 = headNodes2.removeLast();
-                    LinkNode node2 = headNodes2.removeLast();
-                    StrongLink deadLink = new StrongLink(node1, node2);
-                    if(deadLinks == null){
-                        deadLinks = new ArrayList<>();
+                if (headNodes.getLast().link(tailNodes.getFirst())) {
+                    headNodes.addAll(tailNodes);
+                    return headNodes;
+                } else {
+                    LinkedList<LinkNode> headNodes2 = new LinkedList<>(headNodes);
+                    LinkedList<LinkNode> steps = findSteps(headNodes2, tailNodes);
+                    if (steps != null) {
+                        return steps;
+                    } else {
+                        headNodes.removeLast();
+                        headNodes.removeLast();
                     }
-                    deadLinks.add(deadLink);
-                    return findSteps(headNodes2, tailNodes, deadLinks);
                 }
             }
+            return null;
         }
-        return null;
     }
-
 
     private static void findLinkMap() {
         linkMap.clear();
@@ -115,75 +103,76 @@ public class ChainSolver {
             linkMap.add(i, set);
         }
         // xy links
-        List<StrongLink> xyLinks = findXYLinks();
+        Set<StrongLink> xyLinks = findXYLinks();
         linkMap.addAll(xyLinks);
         // almost locked set
-        List<StrongLink> als = findALS();
-        linkMap.addAll(als);
+        if (alsEnable) {
+            Set<StrongLink> als = findALS();
+            linkMap.addAll(als);
+        }
 
         Debug.println("link size: " + linkMap.size());
         Debug.println("max steps: " + maxSteps);
     }
 
-    private static List<StrongLink> findALS() {
-        List<StrongLink> list = new ArrayList<>();
+    private static Set<StrongLink> findALS() {
+        Set<StrongLink> set = new HashSet<>();
         for (int i = 0; i < Board.rows; i++) {
             List<Cell> row = new ArrayList<>();
             List<Cell> col = new ArrayList<>();
             for (int j = 0; j < Board.cols; j++) {
                 Cell cell = Board.cells[i][j];
-                if(cell.candidates.size()>1){
+                if (cell.candidates.size() > 1) {
                     row.add(cell);
                 }
                 Cell cell2 = Board.cells[j][i];
-                if(cell2.candidates.size()>1){
+                if (cell2.candidates.size() > 1) {
                     col.add(cell2);
                 }
             }
-            List<StrongLink> als = findALS(row);
-            List<StrongLink> als2 = findALS(col);
-            list.addAll(als);
-            list.addAll(als2);
+            Set<StrongLink> als = findALS(row);
+            Set<StrongLink> als2 = findALS(col);
+            set.addAll(als);
+            set.addAll(als2);
         }
-        return list;
+        return set;
     }
 
-    private static List<StrongLink> findALS(List<Cell> list) {
-        int n = 3;
-        List<StrongLink> list2 = new ArrayList<>();
-        List<int[]> combinations = CombineUtil.getCombinations(list.size(), n);
+    private static Set<StrongLink> findALS(List<Cell> list) {
+        Set<StrongLink> list2 = new HashSet<>();
+        List<int[]> combinations = CombineUtil.getCombinations(list.size(), alsSize);
         for (int[] c : combinations) {
-            Cell cell1 = list.get(c[0]);
-            Cell cell2 = list.get(c[1]);
-            Cell cell3 = list.get(c[2]);
+            Set<Cell> cells = new HashSet<>();
             Set<Integer> cans = new HashSet<>();
-            cans.addAll(cell1.candidates);
-            cans.addAll(cell2.candidates);
-            cans.addAll(cell3.candidates);
-            if(cans.size() == n+1){
-                List<StrongLink> strongLinks = createStrongLinks(cans, cell1, cell2, cell3);
+            for (int i = 0; i < alsSize; i++) {
+                Cell cell = list.get(c[i]);
+                cells.add(cell);
+                cans.addAll(cell.candidates);
+            }
+            if (cans.size() == alsSize + 1) {
+                List<StrongLink> strongLinks = createStrongLinks(cans, cells);
                 list2.addAll(strongLinks);
             }
         }
         return list2;
     }
 
-    private static List<StrongLink> createStrongLinks(Set<Integer> cans, Cell... cells) {
+    private static List<StrongLink> createStrongLinks(Set<Integer> cans, Set<Cell> cells) {
         List<StrongLink> links = new ArrayList<>();
         ArrayList<Integer> cans2 = new ArrayList<>(cans);
-        List<int[]> combinations = CombineUtil.getCombinations(cans2.size(), cells.length);
+        List<int[]> combinations = CombineUtil.getCombinations(cans2.size(), 2);
         for (int[] c : combinations) {
             Integer c1 = cans2.get(c[0]);
             Integer c2 = cans2.get(c[1]);
             LinkNode node1 = new LinkNode();
             LinkNode node2 = new LinkNode();
             for (Cell cell : cells) {
-                if(cell.candidates.contains(c1)){
+                if (cell.candidates.contains(c1)) {
                     Cell cell1 = new Cell(cell);
                     cell1.linkNum = c1;
                     node1.cells.add(cell1);
                 }
-                if(cell.candidates.contains(c2)){
+                if (cell.candidates.contains(c2)) {
                     Cell cell2 = new Cell(cell);
                     cell2.linkNum = c2;
                     node2.cells.add(cell2);
@@ -231,7 +220,7 @@ public class ChainSolver {
             if (entry.getValue().size() == 2) {
                 StrongLink sl = new StrongLink(entry.getValue(), num);
                 strongLinks.add(sl);
-            }else if (entry.getValue().size() > 2) {
+            } else if (entry.getValue().size() > 2) {
                 StrongLink groupedSL = groupedStrongLink2(entry.getValue(), num);
                 if (groupedSL != null) {
                     strongLinks.add(groupedSL);
@@ -241,17 +230,17 @@ public class ChainSolver {
         return strongLinks;
     }
 
-    public static java.util.List<StrongLink> findXYLinks() {
-        java.util.List<StrongLink> list = new ArrayList<>();
+    public static Set<StrongLink> findXYLinks() {
+        Set<StrongLink> set = new HashSet<>();
         for (int i = 0; i < Board.rows; i++) {
             for (int j = 0; j < Board.cols; j++) {
                 Cell cell = Board.cells[i][j];
                 if (cell.candidates.size() == 2) {
-                    list.add(new StrongLink(cell));
+                    set.add(new StrongLink(cell));
                 }
             }
         }
-        return list;
+        return set;
     }
 
     private static StrongLink groupedStrongLink2(List<Cell> list, int num) {

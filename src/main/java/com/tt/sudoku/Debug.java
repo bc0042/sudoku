@@ -2,7 +2,9 @@ package com.tt.sudoku;
 
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by BC on 1/31/18.
@@ -36,23 +38,35 @@ public class Debug {
         println(sb.toString());
     }
 
-    public static void debug(List<LinkNode> steps) {
-        int head = 0; // 0 or 3
-        if (steps.size() > 3) {
-            if (steps.get(head).getFirstCell().linkNum == 3
-                    && steps.get(head).cells.size() == 3
-                    && steps.get(head).getFirstCell().r == 8 - 1
-//                    && steps.get(3).getFirstCell().c == 4 - 1
-                    && steps.get(1).getFirstCell().linkNum == 3
-                    && steps.get(2).getFirstCell().linkNum == 3
-                    && steps.get(3-head).getFirstCell().linkNum == 3
-                    && steps.get(3-head).getFirstCell().r == 6 -1
-//                    && steps.get(4).getFirstCell().linkNum == 5
-//                    && steps.get(5).getFirstCell().linkNum == 9
-//                    && steps.get(5).getFirstCell().r == 9 - 1
-                    ) {
-                Debug.println();
+    public static void debug2(Set<StrongLink> als) {
+        for (StrongLink a : als) {
+            if (a.node1.cells.size() == 2
+                    && a.node1.getLinkNum() == 7) {
+                System.out.println();
             }
+            if (a.node2.cells.size() == 2
+                    && a.node2.getLinkNum() == 7) {
+                System.out.println();
+            }
+
+        }
+    }
+
+    public static void debug(LinkedList<LinkNode> headNodes, LinkedList<LinkNode> tailNodes) {
+        if(headNodes.size()!=4) return;
+        int head = 0; // 0 or 3
+        if (headNodes.get(head).getLinkNum() == 2
+                && headNodes.get(head).cells.size() == 1
+                && headNodes.get(head).getFirstCell().r == 4 - 1
+                && headNodes.get(1).getLinkNum() == 7
+                && headNodes.get(2).getLinkNum() == 7
+                && headNodes.get(3).getLinkNum() == 8
+                && tailNodes.get(0).getLinkNum() == 8
+                && tailNodes.get(0).cells.size() == 1
+                && tailNodes.get(0).getFirstCell().r == 9-1
+                && tailNodes.get(1).getLinkNum() == 2
+                ) {
+            Debug.println();
         }
     }
 }
