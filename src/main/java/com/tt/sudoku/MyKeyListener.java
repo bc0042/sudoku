@@ -31,6 +31,9 @@ public class MyKeyListener extends KeyAdapter {
         if ((e.getKeyCode() == KeyEvent.VK_S) && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
             handleSave();
         }
+        if (e.getKeyCode() == KeyEvent.VK_F12) {
+            ChainSolver.forcingChain();
+        }
     }
 
     private void handleSave() {
@@ -119,7 +122,8 @@ public class MyKeyListener extends KeyAdapter {
     public static void handleFind() {
         SimpleSolver.checkCandidates();
         SimpleSolver.hiddenSingle();
-//        SimpleSolver.hiddenPair();
+//        SimpleSolver.hiddenPair(); // seems useless
+
         if (!ChainSolver.findChain()) {
             Debug.println("no chains found!!");
             ChainSolver.maxSteps += 2;

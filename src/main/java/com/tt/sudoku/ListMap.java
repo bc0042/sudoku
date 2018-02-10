@@ -59,9 +59,9 @@ public class ListMap {
 
     public Set<StrongLink> getPossibleLinks(LinkNode last) {
         int linkNum = last.getFirstCell().linkNum;
-        // link by number
+        // weakLink by number
         Set<StrongLink> links = get(linkNum);
-        // link by cell
+        // weakLink by cell
         Set<StrongLink> links2 = getOverlap(last);
         links2.addAll(links);
         return links2.stream().collect(Collectors.toSet());
@@ -74,5 +74,13 @@ public class ListMap {
             add(linkNum1, new HashSet<>(Collections.singletonList(link)));
             add(linkNum2, new HashSet<>(Collections.singletonList(link)));
         }
+    }
+
+    public Set<StrongLink> getAllLinks() {
+        Set<StrongLink> set = new HashSet<>();
+        for (Map.Entry<Integer, Set<StrongLink>> entry : map.entrySet()) {
+            set.addAll(entry.getValue());
+        }
+        return set;
     }
 }

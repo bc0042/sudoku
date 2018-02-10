@@ -11,22 +11,19 @@ import java.util.stream.Collectors;
 public class ChainSolver {
     static int maxSteps = 2 * 2;
     static int alsSize = 2;
-    static boolean alsEnable = false;
-    private static ListMap linkMap = new ListMap();
+    static boolean alsEnable = true;
+    static ListMap linkMap = new ListMap();
 
     public static boolean findChain() {
-        findLinkMap();
-        List<StrongLink> allLinks = new ArrayList<>();
-        for (Map.Entry<Integer, Set<StrongLink>> entry : linkMap.entrySet()) {
-            allLinks.addAll(entry.getValue());
-        }
+        createLinkMap();
+        Set<StrongLink> set = linkMap.getAllLinks();
+        List<StrongLink> allLinks = new ArrayList<>(set);
         List<int[]> combinations = CombineUtil.getCombinations(allLinks.size(), 2);
         for (int[] c : combinations) {
             StrongLink link1 = allLinks.get(c[0]);
             StrongLink link2 = allLinks.get(c[1]);
             List<LinkNode[]> orders = link1.getOrders(link2);
             for (LinkNode[] headAndTail : orders) {
-//                Debug.debug(Arrays.asList(headAndTail));
                 if (headAndTail[0].close(headAndTail[3])) {
                     List<LinkNode> chain = findSteps(headAndTail);
                     if (chain != null) {
@@ -42,7 +39,7 @@ public class ChainSolver {
     }
 
     private static List<LinkNode> findSteps(LinkNode[] nodes) {
-        if (nodes[1].link(nodes[2])) {
+        if (nodes[1].weakLink(nodes[2])) {
             // 2 strong links
             return Arrays.asList(nodes);
         } else {
@@ -57,83 +54,75 @@ public class ChainSolver {
     }
 
     private static LinkedList<LinkNode> findSteps(LinkedList<LinkNode> headNodes, LinkedList<LinkNode> tailNodes) {
-        Debug.debug(headNodes, tailNodes);
-        while (true) {
-            Set<StrongLink> possibleLinks = linkMap.getPossibleLinks(headNodes.getLast());
-            for (StrongLink next : possibleLinks) {
-                if (headNodes.size() >= maxSteps) {
-                    return null;
-                }
-                if (headNodes.contains(next.node1) || headNodes.contains(next.node2)) {
-                    continue;
-                }
+        Set<StrongLink> possibleLinks = linkMap.getPossibleLinks(headNodes.getLast());
+        for (StrongLink next : possibleLinks) {
+            if (headNodes.size() >= maxSteps) {
+                return null;
+            }
+            if (headNodes.contains(next.node1) || headNodes.contains(next.node2)) {
+                continue;
+            }
 
-                if (headNodes.getLast().link(next.node1)) {
-                    headNodes.add(next.node1);
-                    headNodes.add(next.node2);
-                } else if (headNodes.getLast().link(next.node2)) {
-                    headNodes.add(next.node2);
-                    headNodes.add(next.node1);
-                } else {
-                    continue;
-                }
+            if (headNodes.getLast().weakLink(next.node1)) {
+                headNodes.add(next.node1);
+                headNodes.add(next.node2);
+            } else if (headNodes.getLast().weakLink(next.node2)) {
+                headNodes.add(next.node2);
+                headNodes.add(next.node1);
+            } else {
+                continue;
+            }
 
-                if (headNodes.getLast().link(tailNodes.getFirst())) {
-                    headNodes.addAll(tailNodes);
-                    return headNodes;
+            if (headNodes.getLast().weakLink(tailNodes.getFirst())) {
+                headNodes.addAll(tailNodes);
+                return headNodes;
+            } else {
+                LinkedList<LinkNode> headNodes2 = new LinkedList<>(headNodes);
+                LinkedList<LinkNode> steps = findSteps(headNodes2, tailNodes);
+                if (steps != null) {
+                    return steps;
                 } else {
-                    LinkedList<LinkNode> headNodes2 = new LinkedList<>(headNodes);
-                    LinkedList<LinkNode> steps = findSteps(headNodes2, tailNodes);
-                    if (steps != null) {
-                        return steps;
-                    } else {
-                        headNodes.removeLast();
-                        headNodes.removeLast();
-                    }
+                    headNodes.removeLast();
+                    headNodes.removeLast();
                 }
             }
-            return null;
         }
+        return null;
     }
 
-    private static void findLinkMap() {
+    private static void createLinkMap() {
         linkMap.clear();
         for (int i = 1; i <= Cell.maxNum; i++) {
             Set<StrongLink> set = findStrongLinksByNum(i);
             linkMap.add(i, set);
         }
+
         // xy links
         Set<StrongLink> xyLinks = findXYLinks();
         linkMap.addAll(xyLinks);
+
         // almost locked set
         if (alsEnable) {
             Set<StrongLink> als = findALS();
             linkMap.addAll(als);
         }
 
-        Debug.println("link size: " + linkMap.size());
+        Debug.println("weakLink size: " + linkMap.size());
         Debug.println("max steps: " + maxSteps);
     }
 
     private static Set<StrongLink> findALS() {
         Set<StrongLink> set = new HashSet<>();
-        for (int i = 0; i < Board.rows; i++) {
-            List<Cell> row = new ArrayList<>();
-            List<Cell> col = new ArrayList<>();
-            for (int j = 0; j < Board.cols; j++) {
-                Cell cell = Board.cells[i][j];
-                if (cell.candidates.size() > 1) {
-                    row.add(cell);
-                }
-                Cell cell2 = Board.cells[j][i];
-                if (cell2.candidates.size() > 1) {
-                    col.add(cell2);
-                }
-            }
-            Set<StrongLink> als = findALS(row);
-            Set<StrongLink> als2 = findALS(col);
-            set.addAll(als);
-            set.addAll(als2);
+        List<Cell> cells = Board.getCandidateCells();
+        Map<Integer, List<Cell>> rows = cells.stream().collect(Collectors.groupingBy(c -> c.r));
+        for (Map.Entry<Integer, List<Cell>> entry : rows.entrySet()) {
+            List<Cell> row = entry.getValue();
+            set.addAll(findALS(row));
+        }
+        Map<Integer, List<Cell>> cols = cells.stream().collect(Collectors.groupingBy(c -> c.c));
+        for (Map.Entry<Integer, List<Cell>> entry : cols.entrySet()) {
+            List<Cell> col = entry.getValue();
+            set.addAll(findALS(col));
         }
         return set;
     }
@@ -150,14 +139,14 @@ public class ChainSolver {
                 cans.addAll(cell.candidates);
             }
             if (cans.size() == alsSize + 1) {
-                List<StrongLink> strongLinks = createStrongLinks(cans, cells);
+                List<StrongLink> strongLinks = createALSLinks(cans, cells);
                 list2.addAll(strongLinks);
             }
         }
         return list2;
     }
 
-    private static List<StrongLink> createStrongLinks(Set<Integer> cans, Set<Cell> cells) {
+    private static List<StrongLink> createALSLinks(Set<Integer> cans, Set<Cell> cells) {
         List<StrongLink> links = new ArrayList<>();
         ArrayList<Integer> cans2 = new ArrayList<>(cans);
         List<int[]> combinations = CombineUtil.getCombinations(cans2.size(), 2);
@@ -184,12 +173,22 @@ public class ChainSolver {
         return links;
     }
 
+    public static Set<StrongLink> findXYLinks() {
+        Set<StrongLink> set = new HashSet<>();
+        List<Cell> cells = Board.getCandidateCells();
+        cells.removeIf(c -> c.candidates.size() != 2);
+        for (Cell cell : cells) {
+            set.add(new StrongLink(cell));
+        }
+        return set;
+    }
+
     public static Set<StrongLink> findStrongLinksByNum(int num) {
-        java.util.List<Cell> list = SimpleSolver.getCellsContainsNum(num);
+        List<Cell> list = SimpleSolver.getCellsContainsNum(num);
         Set<StrongLink> strongLinks = new HashSet<>();
-        // strong link in rows
-        Map<Integer, java.util.List<Cell>> map = list.stream().collect(Collectors.groupingBy(cell -> cell.r));
-        for (Map.Entry<Integer, java.util.List<Cell>> entry : map.entrySet()) {
+        // strong weakLink in rows
+        Map<Integer, List<Cell>> map = list.stream().collect(Collectors.groupingBy(cell -> cell.r));
+        for (Map.Entry<Integer, List<Cell>> entry : map.entrySet()) {
             if (entry.getValue().size() == 2) {
                 StrongLink sl = new StrongLink(entry.getValue(), num);
                 strongLinks.add(sl);
@@ -200,9 +199,9 @@ public class ChainSolver {
                 }
             }
         }
-        // strong link in cols
-        Map<Integer, java.util.List<Cell>> map2 = list.stream().collect(Collectors.groupingBy(cell -> cell.c));
-        for (Map.Entry<Integer, java.util.List<Cell>> entry : map2.entrySet()) {
+        // strong weakLink in cols
+        Map<Integer, List<Cell>> map2 = list.stream().collect(Collectors.groupingBy(cell -> cell.c));
+        for (Map.Entry<Integer, List<Cell>> entry : map2.entrySet()) {
             if (entry.getValue().size() == 2) {
                 StrongLink sl = new StrongLink(entry.getValue(), num);
                 strongLinks.add(sl);
@@ -213,10 +212,10 @@ public class ChainSolver {
                 }
             }
         }
-        // strong link in blocks
-        Map<Point, java.util.List<Cell>> map3 = list.stream().collect(Collectors.groupingBy(
+        // strong weakLink in blocks
+        Map<Point, List<Cell>> map3 = list.stream().collect(Collectors.groupingBy(
                 cell -> new Point(cell.r / 3, cell.c / 3)));
-        for (Map.Entry<Point, java.util.List<Cell>> entry : map3.entrySet()) {
+        for (Map.Entry<Point, List<Cell>> entry : map3.entrySet()) {
             if (entry.getValue().size() == 2) {
                 StrongLink sl = new StrongLink(entry.getValue(), num);
                 strongLinks.add(sl);
@@ -230,17 +229,14 @@ public class ChainSolver {
         return strongLinks;
     }
 
-    public static Set<StrongLink> findXYLinks() {
-        Set<StrongLink> set = new HashSet<>();
-        for (int i = 0; i < Board.rows; i++) {
-            for (int j = 0; j < Board.cols; j++) {
-                Cell cell = Board.cells[i][j];
-                if (cell.candidates.size() == 2) {
-                    set.add(new StrongLink(cell));
-                }
-            }
+    private static StrongLink groupedStrongLink(List<Cell> list, int num) {
+        Map<Point, List<Cell>> map = list.stream().collect(Collectors.groupingBy(
+                cell -> new Point(cell.r / 3, cell.c / 3)));
+        if (map.size() == 2) {
+            Iterator<Map.Entry<Point, List<Cell>>> itr = map.entrySet().iterator();
+            return new StrongLink(itr.next().getValue(), itr.next().getValue(), num);
         }
-        return set;
+        return null;
     }
 
     private static StrongLink groupedStrongLink2(List<Cell> list, int num) {
@@ -257,16 +253,6 @@ public class ChainSolver {
         return null;
     }
 
-    private static StrongLink groupedStrongLink(java.util.List<Cell> list, int num) {
-        Map<Point, java.util.List<Cell>> map = list.stream().collect(Collectors.groupingBy(
-                cell -> new Point(cell.r / 3, cell.c / 3)));
-        if (map.size() == 2) {
-            Iterator<Map.Entry<Point, java.util.List<Cell>>> itr = map.entrySet().iterator();
-            return new StrongLink(itr.next().getValue(), itr.next().getValue(), num);
-        }
-        return null;
-    }
-
     private static void exclude(List<LinkNode> chain) {
         List<Cell> excludes = chain.get(0).exclude(chain.get(chain.size() - 1));
         Main.paintExcludes(excludes);
@@ -275,5 +261,80 @@ public class ChainSolver {
             Debug.println(String.format("exclude: r%dc%d-%s", cell.r + 1, cell.c + 1, cell.excludes));
         }
 
+    }
+
+    /**
+     * start with 3 cells with the same number
+     * end with 1 cell contains the same number
+     * then eliminate the number in the cell of the end
+     * currently only rows
+     */
+    public static void forcingChain() {
+        int n = 3;
+        maxSteps = 6;
+        alsEnable = false;
+        createLinkMap();
+
+        List<AbstractMap.SimpleEntry<Integer, List<Cell>>> list = new ArrayList<>();
+        List<Cell> cells = Board.getCandidateCells();
+        Map<Integer, List<Cell>> map = cells.stream().collect(Collectors.groupingBy(c -> c.r));
+        for (Map.Entry<Integer, List<Cell>> entry : map.entrySet()) {
+            List<Cell> row = entry.getValue();
+            Set<Integer> cans = new HashSet<>();
+            for (Cell cell : row) {
+                cans.addAll(cell.candidates);
+            }
+            for (Integer can : cans) {
+                Map<Boolean, List<Cell>> collect = row.stream().collect(Collectors.groupingBy(
+                        c -> c.candidates.size() > 1 && c.candidates.contains(can)));
+                for (Map.Entry<Boolean, List<Cell>> entry2 : collect.entrySet()) {
+                    if (entry2.getKey() && entry2.getValue().size() == n) {
+                        list.add(new AbstractMap.SimpleEntry<>(can, entry2.getValue()));
+                    }
+                }
+            }
+
+        }
+
+        for (AbstractMap.SimpleEntry<Integer, List<Cell>> entry : list) {
+            List<LinkedList<LinkNode>> forcingChain = findForcingChain(entry);
+            if (forcingChain != null) {
+                Debug.printFcChain(forcingChain);
+                Main.paintFcChain(forcingChain);
+                Cell last = forcingChain.get(0).getLast().getFirstCell();
+                last.candidates.remove(new Integer(last.linkNum));
+                return;
+            }
+        }
+    }
+
+    private static List<LinkedList<LinkNode>> findForcingChain(AbstractMap.SimpleEntry<Integer, List<Cell>> entry) {
+        Integer num = entry.getKey();
+        List<Cell> cells = entry.getValue();
+        List<Cell> destCells = Board.getCandidateCells();
+        destCells.removeIf(cell -> !cell.candidates.contains(num));
+        for (Cell destCell : destCells) {
+            List<LinkedList<LinkNode>> chains = new ArrayList<>();
+            for (Cell startCell : cells) {
+                startCell.linkNum = num;
+                destCell.linkNum = num;
+                LinkedList<LinkNode> starts = new LinkedList<>();
+                LinkedList<LinkNode> ends = new LinkedList<>();
+                starts.add(new LinkNode(startCell));
+                ends.add(new LinkNode(destCell));
+                if (!startCell.equals(destCell)) {
+                    LinkedList<LinkNode> chain = findSteps(starts, ends);
+                    if (chain != null) {
+                        chains.add(chain);
+                    } else {
+                        break;
+                    }
+                }
+            }
+            if (chains.size() == 3) {
+                return chains;
+            }
+        }
+        return null;
     }
 }

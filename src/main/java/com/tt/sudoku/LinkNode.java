@@ -11,6 +11,14 @@ import java.util.stream.Collectors;
 public class LinkNode {
     List<Cell> cells = new ArrayList<>();
 
+    public LinkNode() {
+
+    }
+
+    public LinkNode(Cell cell) {
+        cells.add(cell);
+    }
+
     public int sameRow(LinkNode node) {
         List<Cell> list = new ArrayList<>();
         list.addAll(this.cells);
@@ -146,25 +154,25 @@ public class LinkNode {
             return false;
         }
 
-        if (this.getFirstCell().linkNum == node.getFirstCell().linkNum) {
+        if (this.getLinkNum() == node.getLinkNum()) {
             Set<Point> affectPoints = this.getAffectPoints();
             Set<Point> affectPoints2 = node.getAffectPoints();
             boolean retain = affectPoints.retainAll(affectPoints2);
             if (retain) {
                 for (Point p : affectPoints) {
-                    boolean contains = Board.cells[p.x][p.y].candidates.contains(this.getFirstCell().linkNum);
+                    boolean contains = Board.cells[p.x][p.y].candidates.contains(this.getLinkNum());
                     if (contains) {
                         return true;
                     }
                 }
             }
         } else {
-            // different link number
+            // different weakLink number
             if (this.sameRow(node) != -1 || this.sameCol(node) != -1 || this.sameBlock(node) != null) {
-                if (this.isSingle() && this.getFirstCell().candidates.contains(node.getFirstCell().linkNum)) {
+                if (this.isSingle() && this.getFirstCell().candidates.contains(node.getLinkNum())) {
                     return true;
                 }
-                if (node.isSingle() && node.getFirstCell().candidates.contains(this.getFirstCell().linkNum)) {
+                if (node.isSingle() && node.getFirstCell().candidates.contains(this.getLinkNum())) {
                     return true;
                 }
 
@@ -175,8 +183,8 @@ public class LinkNode {
 
     public List<Cell> exclude(LinkNode node) {
         List<Cell> list = new ArrayList<>();
-        int linkNum1 = this.getFirstCell().linkNum;
-        int linkNum2 = node.getFirstCell().linkNum;
+        int linkNum1 = this.getLinkNum();
+        int linkNum2 = node.getLinkNum();
         if (linkNum1 == linkNum2) {
             Set<Point> affectPoints = this.getAffectPoints();
             Set<Point> affectPoints2 = node.getAffectPoints();
@@ -192,7 +200,7 @@ public class LinkNode {
                 }
             }
         } else {
-            // different link number
+            // different weakLink number
             if (this.sameRow(node) != -1 || this.sameCol(node) != -1 || this.sameBlock(node) != null) {
                 if (this.isSingle() && this.getFirstCell().candidates.contains(linkNum2)) {
                     this.getFirstCell().excludes = Collections.singletonList(linkNum2);
@@ -208,8 +216,8 @@ public class LinkNode {
         return list;
     }
 
-    public boolean link(LinkNode node) {
-        if (this.getFirstCell().linkNum == node.getFirstCell().linkNum) {
+    public boolean weakLink(LinkNode node) {
+        if (this.getLinkNum() == node.getLinkNum()) {
             if (this.sameRow(node) != -1 || this.sameCol(node) != -1 || this.sameBlock(node) != null) {
                 return true;
             }
@@ -242,10 +250,17 @@ public class LinkNode {
     }
 
     private boolean sameLinkNum(LinkNode node) {
-        return this.getFirstCell().linkNum == node.getFirstCell().linkNum;
+        return this.getLinkNum() == node.getLinkNum();
     }
 
     public int getLinkNum() {
         return getFirstCell().linkNum;
+    }
+
+    public void paintMe(Graphics g, int cellWidth) {
+        int size = (int) (cellWidth / Cell.factor);
+        Cell c1 = getFirstCell();
+        Point p1 = c1.getCandidatePoint(c1.linkNum, cellWidth);
+        g.drawArc(p1.x, p1.y - size, size, size, 0, 360);
     }
 }

@@ -24,18 +24,36 @@ public class Debug {
         System.out.println(sb);
     }
 
-    public static void exit() {
-        System.exit(11);
+    public static void printChain(List<LinkNode> chain) {
+        println(chain2str(chain));
     }
 
-    public static void printChain(List<LinkNode> list) {
+    public static void printFcChain(List<LinkedList<LinkNode>> chains) {
+        println("forcing chain..");
+        for (LinkedList<LinkNode> chain : chains) {
+            LinkedList<LinkNode> chain2 = new LinkedList<>(chain);
+            StringBuffer sb = new StringBuffer();
+            LinkNode first = chain2.removeFirst();
+            LinkNode last = chain2.removeLast();
+            sb.append(first).append("-->");
+            sb.append(chain2str(chain2));
+            sb.append(last).append("-->");
+            println(sb.toString());
+        }
+    }
+
+    private static String chain2str(List<LinkNode> chain) {
         StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < list.size(); i += 2) {
-            LinkNode p1 = list.get(i);
-            LinkNode p2 = list.get(i + 1);
+        for (int i = 0; i < chain.size(); i += 2) {
+            LinkNode p1 = chain.get(i);
+            LinkNode p2 = chain.get(i + 1);
             sb.append(String.format("%s==>%s-->", p1, p2));
         }
-        println(sb.toString());
+        return sb.toString();
+    }
+
+    public static void exit() {
+        System.exit(11);
     }
 
     public static void debug2(Set<StrongLink> als) {
