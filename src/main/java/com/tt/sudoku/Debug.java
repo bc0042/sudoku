@@ -28,7 +28,7 @@ public class Debug {
         println(chain2str(chain));
     }
 
-    public static void printFcChain(List<LinkedList<LinkNode>> chains) {
+    public static void printForcingChain(List<LinkedList<LinkNode>> chains) {
         println("forcing chain..");
         for (LinkedList<LinkNode> chain : chains) {
             LinkedList<LinkNode> chain2 = new LinkedList<>(chain);

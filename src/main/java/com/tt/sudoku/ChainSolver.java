@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 public class ChainSolver {
     static int maxSteps = 2 * 2;
     static int alsSize = 2;
-    static boolean alsEnable = true;
+    static boolean alsEnabled = true;
     static ListMap linkMap = new ListMap();
 
     public static boolean findChain() {
@@ -102,13 +102,13 @@ public class ChainSolver {
         linkMap.addAll(xyLinks);
 
         // almost locked set
-        if (alsEnable) {
+        if (alsEnabled) {
             Set<StrongLink> als = findALS();
             linkMap.addAll(als);
         }
 
-        Debug.println("weakLink size: " + linkMap.size());
-        Debug.println("max steps: " + maxSteps);
+        Debug.println("strong link size: " + linkMap.size());
+        Debug.println(String.format("maxSteps=%d, alsSize=%d, alsEnabled=%s", maxSteps, alsSize, alsEnabled));
     }
 
     private static Set<StrongLink> findALS() {
@@ -267,12 +267,10 @@ public class ChainSolver {
      * start with 3 cells with the same number
      * end with 1 cell contains the same number
      * then eliminate the number in the cell of the end
-     * currently only rows
      */
     public static void forcingChain() {
+        Debug.println("forcing chain..");
         int n = 3;
-        maxSteps = 6;
-        alsEnable = false;
         createLinkMap();
 
         List<AbstractMap.SimpleEntry<Integer, List<Cell>>> list = new ArrayList<>();
@@ -293,19 +291,38 @@ public class ChainSolver {
                     }
                 }
             }
+        }
 
+        Map<Integer, List<Cell>> map2 = cells.stream().collect(Collectors.groupingBy(c -> c.c));
+        for (Map.Entry<Integer, List<Cell>> entry : map2.entrySet()) {
+            List<Cell> col = entry.getValue();
+            Set<Integer> cans = new HashSet<>();
+            for (Cell cell : col) {
+                cans.addAll(cell.candidates);
+            }
+            for (Integer can : cans) {
+                Map<Boolean, List<Cell>> collect = col.stream().collect(Collectors.groupingBy(
+                        c -> c.candidates.size() > 1 && c.candidates.contains(can)));
+                for (Map.Entry<Boolean, List<Cell>> entry2 : collect.entrySet()) {
+                    if (entry2.getKey() && entry2.getValue().size() == n) {
+                        list.add(new AbstractMap.SimpleEntry<>(can, entry2.getValue()));
+                    }
+                }
+            }
         }
 
         for (AbstractMap.SimpleEntry<Integer, List<Cell>> entry : list) {
             List<LinkedList<LinkNode>> forcingChain = findForcingChain(entry);
             if (forcingChain != null) {
-                Debug.printFcChain(forcingChain);
-                Main.paintFcChain(forcingChain);
+                Debug.printForcingChain(forcingChain);
+                Main.printForcingChain(forcingChain);
                 Cell last = forcingChain.get(0).getLast().getFirstCell();
                 last.candidates.remove(new Integer(last.linkNum));
                 return;
             }
         }
+        Debug.println("forcing chain not found..");
+        maxSteps += 2;
     }
 
     private static List<LinkedList<LinkNode>> findForcingChain(AbstractMap.SimpleEntry<Integer, List<Cell>> entry) {
@@ -323,6 +340,11 @@ public class ChainSolver {
                 starts.add(new LinkNode(startCell));
                 ends.add(new LinkNode(destCell));
                 if (!startCell.equals(destCell)) {
+                    if (starts.getFirst().weakLink(ends.getLast())) {
+                        starts.addAll(ends);
+                        chains.add(starts);
+                        continue;
+                    }
                     LinkedList<LinkNode> chain = findSteps(starts, ends);
                     if (chain != null) {
                         chains.add(chain);
@@ -336,5 +358,13 @@ public class ChainSolver {
             }
         }
         return null;
+    }
+
+    public static void reset() {
+        Debug.println("reset..");
+        maxSteps = 6;
+        alsSize = 3;
+        alsEnabled = true;
+        Debug.println(String.format("maxSteps=%d, alsSize=%d, alsEnabled=%s", maxSteps, alsSize, alsEnabled));
     }
 }

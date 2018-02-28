@@ -34,6 +34,9 @@ public class MyKeyListener extends KeyAdapter {
         if (e.getKeyCode() == KeyEvent.VK_F12) {
             ChainSolver.forcingChain();
         }
+        if (e.getKeyCode() == KeyEvent.VK_S) {
+            ChainSolver.reset();
+        }
     }
 
     private void handleSave() {
@@ -129,10 +132,10 @@ public class MyKeyListener extends KeyAdapter {
             ChainSolver.maxSteps += 2;
             if (ChainSolver.maxSteps > 10) {
                 ChainSolver.maxSteps = 4;
-                ChainSolver.alsEnable = true;
+                ChainSolver.alsEnabled = true;
                 Debug.println(String.format("== ALS enabled size-%d ==", ChainSolver.alsSize));
             }
-            if (ChainSolver.alsEnable && ChainSolver.maxSteps > 6) {
+            if (ChainSolver.alsEnabled && ChainSolver.maxSteps > 8) {
                 ChainSolver.alsSize++;
                 ChainSolver.maxSteps = 4;
                 Debug.println(String.format("== ALS enabled size-%d ==", ChainSolver.alsSize));

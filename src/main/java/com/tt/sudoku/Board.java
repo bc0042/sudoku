@@ -111,7 +111,7 @@ public class Board extends JPanel {
         }
     }
 
-    public void paintFcChain(List<LinkedList<LinkNode>> forcingChain) {
+    public void printForcingChain(List<LinkedList<LinkNode>> forcingChain) {
         Graphics g = getGraphics();
         int cellWidth = getCellWidth();
         for (LinkedList<LinkNode> chain : forcingChain) {

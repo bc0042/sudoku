@@ -42,7 +42,7 @@ public class Main {
         board.paintExcludeList(excludes);
     }
 
-    public static void paintFcChain(List<LinkedList<LinkNode>> forcingChain) {
-        board.paintFcChain(forcingChain);
+    public static void printForcingChain(List<LinkedList<LinkNode>> forcingChain) {
+        board.printForcingChain(forcingChain);
     }
 }
