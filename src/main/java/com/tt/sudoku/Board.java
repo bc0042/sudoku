@@ -2,8 +2,8 @@ package com.tt.sudoku;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -86,7 +86,7 @@ public class Board extends JPanel {
     }
 
     public void paintChain(List<LinkNode> list) {
-        if (list.size() <= 2) return;
+//        if (list.size() <= 2) return;
         Graphics g = getGraphics();
         g.setColor(Color.red);
         int cellWidth = getCellWidth();
@@ -109,5 +109,33 @@ public class Board extends JPanel {
                 g.drawArc(p1.x, p1.y - size, size, size, 0, 360);
             }
         }
+    }
+
+    public void printForcingChain(List<LinkedList<LinkNode>> forcingChain) {
+        Graphics g = getGraphics();
+        int cellWidth = getCellWidth();
+        for (LinkedList<LinkNode> chain : forcingChain) {
+            LinkedList<LinkNode> chain2 = new LinkedList<>(chain);
+            LinkNode first = chain2.removeFirst();
+            LinkNode last = chain2.removeLast();
+            g.setColor(Color.green);
+            first.paintMe(g, cellWidth);
+            g.setColor(Color.blue);
+            last.paintMe(g, cellWidth);
+            paintChain(chain2);
+        }
+    }
+
+    public static List<Cell> getCandidateCells() {
+        List<Cell> list = new ArrayList<>();
+        for (int i = 0; i < Board.rows; i++) {
+            for (int j = 0; j < Board.cols; j++) {
+                Cell cell = Board.cells[i][j];
+                if (cell.candidates.size() > 1) {
+                    list.add(cell);
+                }
+            }
+        }
+        return list;
     }
 }

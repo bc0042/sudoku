@@ -86,6 +86,7 @@ public class SimpleSolver {
         return list;
     }
 
+    @Deprecated
     public static void hiddenPair() {
         for (int i = 0; i < Board.rows; i++) {
             List<Cell> row = new ArrayList<>();

@@ -7,16 +7,21 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MyKeyListener extends KeyAdapter {
+    static ExecutorService es = Executors.newSingleThreadExecutor();
+
     @Override
     public void keyPressed(KeyEvent e) {
         super.keyPressed(e);
         if ((e.getKeyCode() == KeyEvent.VK_F) && ((e.getModifiers() & KeyEvent.ALT_MASK) == 0)) {
-            handleFind();
+            es.submit(() -> handleFind());
         }
         if ((e.getKeyCode() == KeyEvent.VK_R) && ((e.getModifiers() & KeyEvent.ALT_MASK) == 0)) {
             handleRefresh();
@@ -26,6 +31,36 @@ public class MyKeyListener extends KeyAdapter {
         }
         if ((e.getKeyCode() == KeyEvent.VK_C) && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
             handleCopy();
+        }
+        if ((e.getKeyCode() == KeyEvent.VK_S) && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
+            handleSave();
+        }
+        if (e.getKeyCode() == KeyEvent.VK_F1) {
+            ChainSolver.toggleSteps();
+        }
+        if (e.getKeyCode() == KeyEvent.VK_F2) {
+            ChainSolver.toggleAls();
+        }
+        if (e.getKeyCode() == KeyEvent.VK_F12) {
+            es.submit(() -> ChainSolver.forcingChain());
+        }
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+            Debug.println("cancelled..");
+            es.shutdownNow();
+            es = Executors.newSingleThreadExecutor();
+        }
+    }
+
+    private void handleSave() {
+        String s = handleCopy();
+        try {
+            String file = MyKeyListener.class.getClassLoader().getResource(ParseHelper.dataFile).getFile();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+            writer.write(s);
+            writer.close();
+            Debug.println("save to file..");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -44,7 +79,7 @@ public class MyKeyListener extends KeyAdapter {
         }
     }
 
-    private void handleCopy() {
+    private String handleCopy() {
         StringBuffer sb = new StringBuffer();
         String replacement = "=";
         try {
@@ -68,15 +103,11 @@ public class MyKeyListener extends KeyAdapter {
             }
         }
         copy2Clipboard(str);
-        Debug.println("copy to clipboard.. ");
+        Debug.println("copy to clipboard.. \n" + str);
+        return str;
     }
 
-    private void copy2Clipboard(String str) {
-        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        StringSelection sel = new StringSelection(str);
-        clipboard.setContents(sel, sel);
-    }
-
+    @Deprecated
     private void handleCopy2() {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < Board.rows; i++) {
@@ -93,6 +124,12 @@ public class MyKeyListener extends KeyAdapter {
         Debug.println("copy to clipboard: " + sb);
     }
 
+    private void copy2Clipboard(String str) {
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        StringSelection sel = new StringSelection(str);
+        clipboard.setContents(sel, sel);
+    }
+
     private void handleRefresh() {
         Main.refresh();
     }
@@ -100,10 +137,12 @@ public class MyKeyListener extends KeyAdapter {
     public static void handleFind() {
         SimpleSolver.checkCandidates();
         SimpleSolver.hiddenSingle();
-//        SimpleSolver.hiddenPair();
+//        SimpleSolver.hiddenPair(); // seems useless
+
         if (!ChainSolver.findChain()) {
             Debug.println("no chains found!!");
             ChainSolver.maxSteps += 2;
+            Debug.println("maxSteps=" + ChainSolver.maxSteps);
         }
     }
 }

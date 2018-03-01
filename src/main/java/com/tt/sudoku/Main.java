@@ -41,4 +41,8 @@ public class Main {
     public static void paintExcludes(List<Cell> excludes) {
         board.paintExcludeList(excludes);
     }
+
+    public static void printForcingChain(List<LinkedList<LinkNode>> forcingChain) {
+        board.printForcingChain(forcingChain);
+    }
 }

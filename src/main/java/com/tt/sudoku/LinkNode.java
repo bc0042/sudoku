@@ -11,6 +11,14 @@ import java.util.stream.Collectors;
 public class LinkNode {
     List<Cell> cells = new ArrayList<>();
 
+    public LinkNode() {
+
+    }
+
+    public LinkNode(Cell cell) {
+        cells.add(cell);
+    }
+
     public int sameRow(LinkNode node) {
         List<Cell> list = new ArrayList<>();
         list.addAll(this.cells);
@@ -18,7 +26,7 @@ public class LinkNode {
         Map<Integer, List<Cell>> map = list.stream().collect(Collectors.groupingBy(cell -> cell.r));
         if (map.size() == 1) {
             Integer row = map.entrySet().iterator().next().getKey();
-            if(node.cells.isEmpty()){
+            if (node.cells.isEmpty()) {
                 return row;
             }
             if (this.isSingle() && !node.cells.contains(this.getFirstCell())) {
@@ -38,7 +46,7 @@ public class LinkNode {
         Map<Integer, List<Cell>> map = list.stream().collect(Collectors.groupingBy(cell -> cell.c));
         if (map.size() == 1) {
             Integer col = map.entrySet().iterator().next().getKey();
-            if(node.cells.isEmpty()){
+            if (node.cells.isEmpty()) {
                 return col;
             }
             if (this.isSingle() && !node.cells.contains(this.getFirstCell())) {
@@ -58,6 +66,9 @@ public class LinkNode {
         Map<Point, List<Cell>> map = list.stream().collect(Collectors.groupingBy(cell -> new Point(cell.r / 3, cell.c / 3)));
         if (map.size() == 1) {
             Point block = map.entrySet().iterator().next().getKey();
+            if (node.cells.isEmpty()) {
+                return block;
+            }
             if (this.isSingle() && !node.cells.contains(this.getFirstCell())) {
                 return block;
             }
@@ -91,12 +102,6 @@ public class LinkNode {
         return Objects.hash(cells);
     }
 
-    public List<Cell> addAll(LinkNode p) {
-        List<Cell> list = new ArrayList<>();
-        list.addAll(this.cells);
-        list.addAll(p.cells);
-        return list;
-    }
 
     public boolean isSingle() {
         return cells.size() == 1;
@@ -117,23 +122,23 @@ public class LinkNode {
                 for (int i = 0; i < Board.cols; i++) {
                     set.add(new Point(row, i));
                 }
-            } else {
-                int col = this.sameCol(new LinkNode());
-                if (col != -1) {
-                    for (int i = 0; i < Board.rows; i++) {
-                        set.add(new Point(i, col));
-                    }
-                }else{
-                    int r1 = this.getFirstCell().r / 3;
-                    int c1 = this.getFirstCell().c / 3;
-                    for (int i = 0; i < 3; i++) {
-                        for (int j = 0; j < 3; j++) {
-                            int r2 = r1 * 3 + i;
-                            int c2 = c1 * 3 + j;
-                            set.add(new Point(r2, c2));
-                        }
-                    }
+            }
 
+            int col = this.sameCol(new LinkNode());
+            if (col != -1) {
+                for (int i = 0; i < Board.rows; i++) {
+                    set.add(new Point(i, col));
+                }
+            }
+
+            Point block = this.sameBlock(new LinkNode());
+            if(block != null){
+                for (int i = 0; i < 3; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        int r2 = block.x * 3 + i;
+                        int c2 = block.y * 3 + j;
+                        set.add(new Point(r2, c2));
+                    }
                 }
             }
 
@@ -149,25 +154,25 @@ public class LinkNode {
             return false;
         }
 
-        if (this.getFirstCell().linkNum == node.getFirstCell().linkNum) {
+        if (this.getLinkNum() == node.getLinkNum()) {
             Set<Point> affectPoints = this.getAffectPoints();
             Set<Point> affectPoints2 = node.getAffectPoints();
             boolean retain = affectPoints.retainAll(affectPoints2);
             if (retain) {
                 for (Point p : affectPoints) {
-                    boolean contains = Board.cells[p.x][p.y].candidates.contains(this.getFirstCell().linkNum);
+                    boolean contains = Board.cells[p.x][p.y].candidates.contains(this.getLinkNum());
                     if (contains) {
                         return true;
                     }
                 }
             }
         } else {
-            // different link number
+            // different weakLink number
             if (this.sameRow(node) != -1 || this.sameCol(node) != -1 || this.sameBlock(node) != null) {
-                if (this.isSingle() && this.getFirstCell().candidates.contains(node.getFirstCell().linkNum)) {
+                if (this.isSingle() && this.getFirstCell().candidates.contains(node.getLinkNum())) {
                     return true;
                 }
-                if (node.isSingle() && node.getFirstCell().candidates.contains(this.getFirstCell().linkNum)) {
+                if (node.isSingle() && node.getFirstCell().candidates.contains(this.getLinkNum())) {
                     return true;
                 }
 
@@ -178,8 +183,8 @@ public class LinkNode {
 
     public List<Cell> exclude(LinkNode node) {
         List<Cell> list = new ArrayList<>();
-        int linkNum1 = this.getFirstCell().linkNum;
-        int linkNum2 = node.getFirstCell().linkNum;
+        int linkNum1 = this.getLinkNum();
+        int linkNum2 = node.getLinkNum();
         if (linkNum1 == linkNum2) {
             Set<Point> affectPoints = this.getAffectPoints();
             Set<Point> affectPoints2 = node.getAffectPoints();
@@ -195,7 +200,7 @@ public class LinkNode {
                 }
             }
         } else {
-            // different link number
+            // different weakLink number
             if (this.sameRow(node) != -1 || this.sameCol(node) != -1 || this.sameBlock(node) != null) {
                 if (this.isSingle() && this.getFirstCell().candidates.contains(linkNum2)) {
                     this.getFirstCell().excludes = Collections.singletonList(linkNum2);
@@ -211,8 +216,8 @@ public class LinkNode {
         return list;
     }
 
-    public boolean link(LinkNode node) {
-        if (this.getFirstCell().linkNum == node.getFirstCell().linkNum) {
+    public boolean weakLink(LinkNode node) {
+        if (this.getLinkNum() == node.getLinkNum()) {
             if (this.sameRow(node) != -1 || this.sameCol(node) != -1 || this.sameBlock(node) != null) {
                 return true;
             }
@@ -228,7 +233,7 @@ public class LinkNode {
     private boolean overlap(LinkNode node) {
         for (Cell cell : this.cells) {
             for (Cell cell1 : node.cells) {
-                if(cell1.overlap(cell)){
+                if (cell1.overlap(cell)) {
                     return true;
                 }
             }
@@ -237,14 +242,25 @@ public class LinkNode {
     }
 
     public boolean singleOverlap(LinkNode node) {
-        if(this.isSingle() && node.isSingle() && !this.sameLinkNum(node)
-                && this.getFirstCell().overlap(node.getFirstCell())){
+        if (this.isSingle() && node.isSingle() && !this.sameLinkNum(node)
+                && this.getFirstCell().overlap(node.getFirstCell())) {
             return true;
         }
         return false;
     }
 
     private boolean sameLinkNum(LinkNode node) {
-        return this.getFirstCell().linkNum == node.getFirstCell().linkNum;
+        return this.getLinkNum() == node.getLinkNum();
+    }
+
+    public int getLinkNum() {
+        return getFirstCell().linkNum;
+    }
+
+    public void paintMe(Graphics g, int cellWidth) {
+        int size = (int) (cellWidth / Cell.factor);
+        Cell c1 = getFirstCell();
+        Point p1 = c1.getCandidatePoint(c1.linkNum, cellWidth);
+        g.drawArc(p1.x, p1.y - size, size, size, 0, 360);
     }
 }
