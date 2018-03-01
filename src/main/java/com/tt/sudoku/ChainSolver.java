@@ -9,9 +9,8 @@ import java.util.stream.Collectors;
  * Created by BC on 1/31/18.
  */
 public class ChainSolver {
+    static int alsSize = 1;
     static int maxSteps = 2 * 2;
-    static int alsSize = 2;
-    static boolean alsEnabled = true;
     static ListMap linkMap = new ListMap();
 
     public static boolean findChain() {
@@ -102,13 +101,13 @@ public class ChainSolver {
         linkMap.addAll(xyLinks);
 
         // almost locked set
-        if (alsEnabled) {
+        if (alsSize >= 2) {
             Set<StrongLink> als = findALS();
             linkMap.addAll(als);
         }
 
         Debug.println("strong link size: " + linkMap.size());
-        Debug.println(String.format("maxSteps=%d, alsSize=%d, alsEnabled=%s", maxSteps, alsSize, alsEnabled));
+        Debug.println(String.format("maxSteps=%d, alsSize=%d", maxSteps, alsSize));
     }
 
     private static Set<StrongLink> findALS() {
@@ -116,13 +115,15 @@ public class ChainSolver {
         List<Cell> cells = Board.getCandidateCells();
         Map<Integer, List<Cell>> rows = cells.stream().collect(Collectors.groupingBy(c -> c.r));
         for (Map.Entry<Integer, List<Cell>> entry : rows.entrySet()) {
-            List<Cell> row = entry.getValue();
-            set.addAll(findALS(row));
+            set.addAll(findALS(entry.getValue()));
         }
         Map<Integer, List<Cell>> cols = cells.stream().collect(Collectors.groupingBy(c -> c.c));
         for (Map.Entry<Integer, List<Cell>> entry : cols.entrySet()) {
-            List<Cell> col = entry.getValue();
-            set.addAll(findALS(col));
+            set.addAll(findALS(entry.getValue()));
+        }
+        Map<Point, List<Cell>> blocks = cells.stream().collect(Collectors.groupingBy(c -> new Point(c.r / 3, c.c / 3)));
+        for (Map.Entry<Point, List<Cell>> entry : blocks.entrySet()) {
+            set.addAll(findALS(entry.getValue()));
         }
         return set;
     }
@@ -264,55 +265,19 @@ public class ChainSolver {
     }
 
     /**
-     * start with 3 cells with the same number
-     * end with 1 cell contains the same number
-     * then eliminate the number in the cell of the end
+     * start with one cell contains 3 candidates
+     * end with the same cell and the same candidate
+     * then eliminate the candidate
      */
     public static void forcingChain() {
         Debug.println("forcing chain..");
         int n = 3;
         createLinkMap();
 
-        List<AbstractMap.SimpleEntry<Integer, List<Cell>>> list = new ArrayList<>();
         List<Cell> cells = Board.getCandidateCells();
-        Map<Integer, List<Cell>> map = cells.stream().collect(Collectors.groupingBy(c -> c.r));
-        for (Map.Entry<Integer, List<Cell>> entry : map.entrySet()) {
-            List<Cell> row = entry.getValue();
-            Set<Integer> cans = new HashSet<>();
-            for (Cell cell : row) {
-                cans.addAll(cell.candidates);
-            }
-            for (Integer can : cans) {
-                Map<Boolean, List<Cell>> collect = row.stream().collect(Collectors.groupingBy(
-                        c -> c.candidates.size() > 1 && c.candidates.contains(can)));
-                for (Map.Entry<Boolean, List<Cell>> entry2 : collect.entrySet()) {
-                    if (entry2.getKey() && entry2.getValue().size() == n) {
-                        list.add(new AbstractMap.SimpleEntry<>(can, entry2.getValue()));
-                    }
-                }
-            }
-        }
-
-        Map<Integer, List<Cell>> map2 = cells.stream().collect(Collectors.groupingBy(c -> c.c));
-        for (Map.Entry<Integer, List<Cell>> entry : map2.entrySet()) {
-            List<Cell> col = entry.getValue();
-            Set<Integer> cans = new HashSet<>();
-            for (Cell cell : col) {
-                cans.addAll(cell.candidates);
-            }
-            for (Integer can : cans) {
-                Map<Boolean, List<Cell>> collect = col.stream().collect(Collectors.groupingBy(
-                        c -> c.candidates.size() > 1 && c.candidates.contains(can)));
-                for (Map.Entry<Boolean, List<Cell>> entry2 : collect.entrySet()) {
-                    if (entry2.getKey() && entry2.getValue().size() == n) {
-                        list.add(new AbstractMap.SimpleEntry<>(can, entry2.getValue()));
-                    }
-                }
-            }
-        }
-
-        for (AbstractMap.SimpleEntry<Integer, List<Cell>> entry : list) {
-            List<LinkedList<LinkNode>> forcingChain = findForcingChain(entry);
+        cells.removeIf(c -> c.candidates.size() != n);
+        for (Cell cell : cells) {
+            List<LinkedList<LinkNode>> forcingChain = findForcingChain(cell);
             if (forcingChain != null) {
                 Debug.printForcingChain(forcingChain);
                 Main.printForcingChain(forcingChain);
@@ -321,50 +286,135 @@ public class ChainSolver {
                 return;
             }
         }
-        Debug.println("forcing chain not found..");
-        maxSteps += 2;
-    }
 
-    private static List<LinkedList<LinkNode>> findForcingChain(AbstractMap.SimpleEntry<Integer, List<Cell>> entry) {
-        Integer num = entry.getKey();
-        List<Cell> cells = entry.getValue();
-        List<Cell> destCells = Board.getCandidateCells();
-        destCells.removeIf(cell -> !cell.candidates.contains(num));
-        for (Cell destCell : destCells) {
-            List<LinkedList<LinkNode>> chains = new ArrayList<>();
-            for (Cell startCell : cells) {
-                startCell.linkNum = num;
-                destCell.linkNum = num;
-                LinkedList<LinkNode> starts = new LinkedList<>();
-                LinkedList<LinkNode> ends = new LinkedList<>();
-                starts.add(new LinkNode(startCell));
-                ends.add(new LinkNode(destCell));
-                if (!startCell.equals(destCell)) {
-                    if (starts.getFirst().weakLink(ends.getLast())) {
-                        starts.addAll(ends);
-                        chains.add(starts);
-                        continue;
-                    }
-                    LinkedList<LinkNode> chain = findSteps(starts, ends);
-                    if (chain != null) {
-                        chains.add(chain);
-                    } else {
-                        break;
+        cells = Board.getCandidateCells();
+        Map<Integer, List<Cell>> rows = cells.stream().collect(Collectors.groupingBy(c -> c.r));
+        for (Map.Entry<Integer, List<Cell>> entry : rows.entrySet()) {
+            List<Cell> row = entry.getValue();
+            Set<Integer> cans = new HashSet<>();
+            for (Cell cell : row) {
+                cans.addAll(cell.candidates);
+            }
+            for (Integer can : cans) {
+                Map<Boolean, List<Cell>> collect = row.stream().collect(Collectors.groupingBy(c -> c.candidates.contains(can)));
+                for (Map.Entry<Boolean, List<Cell>> entry2 : collect.entrySet()) {
+                    if (entry2.getKey() && entry2.getValue().size() == n) {
+                        List<LinkedList<LinkNode>> forcingChain = findForcingChain(entry2.getValue(), can);
+                        if (forcingChain != null) {
+                            printForcingChain(forcingChain);
+                            return;
+                        }
                     }
                 }
             }
-            if (chains.size() == 3) {
-                return chains;
+        }
+
+        Map<Integer, List<Cell>> cols = cells.stream().collect(Collectors.groupingBy(c -> c.c));
+        for (Map.Entry<Integer, List<Cell>> entry : cols.entrySet()) {
+            List<Cell> col = entry.getValue();
+            Set<Integer> cans = new HashSet<>();
+            for (Cell cell : col) {
+                cans.addAll(cell.candidates);
+            }
+            for (Integer can : cans) {
+                Map<Boolean, List<Cell>> collect = col.stream().collect(Collectors.groupingBy(c -> c.candidates.contains(can)));
+                for (Map.Entry<Boolean, List<Cell>> entry2 : collect.entrySet()) {
+                    if (entry2.getKey() && entry2.getValue().size() == n) {
+                        List<LinkedList<LinkNode>> forcingChain = findForcingChain(entry2.getValue(), can);
+                        if (forcingChain != null) {
+                            printForcingChain(forcingChain);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        Debug.println("forcing chain not found..");
+        maxSteps += 2;
+        Debug.println("maxSteps=" + ChainSolver.maxSteps);
+    }
+
+    private static void printForcingChain(List<LinkedList<LinkNode>> forcingChain) {
+        Debug.printForcingChain(forcingChain);
+        Main.printForcingChain(forcingChain);
+        Cell last = forcingChain.get(0).getLast().getFirstCell();
+        last.candidates.remove(new Integer(last.linkNum));
+
+    }
+
+    private static List<LinkedList<LinkNode>> findForcingChain(Cell startCell) {
+        int n = startCell.candidates.size();
+        List<Cell> destCells = Board.getCandidateCells();
+        destCells.remove(startCell);
+        for (Cell destCell : destCells) {
+            for (Integer endNum : destCell.candidates) {
+                List<LinkedList<LinkNode>> chains = new ArrayList<>();
+                for (Integer startNum : startCell.candidates) {
+                    startCell = new Cell(startCell);
+                    startCell.linkNum = startNum;
+                    destCell.linkNum = endNum;
+                    if (!findForcingChain2(startCell, destCell, chains)) {
+                        break;
+                    }
+                }
+                if (chains.size() == n) {
+                    return chains;
+                }
             }
         }
         return null;
     }
 
-    public static void reset() {
-        Debug.println("reset..");
-        maxSteps = 6;
-        alsSize = 3;
-        alsEnabled = true;
-        Debug.println(String.format("maxSteps=%d, alsSize=%d, alsEnabled=%s", maxSteps, alsSize, alsEnabled));
+    private static List<LinkedList<LinkNode>> findForcingChain(List<Cell> startCells, Integer startNum) {
+        int n = startCells.size();
+        List<Cell> destCells = Board.getCandidateCells();
+        destCells.removeAll(startCells);
+        for (Cell destCell : destCells) {
+            for (Integer endNum : destCell.candidates) {
+                List<LinkedList<LinkNode>> chains = new ArrayList<>();
+                for (Cell startCell : startCells) {
+                    startCell.linkNum = startNum;
+                    destCell.linkNum = endNum;
+                    if (!findForcingChain2(startCell, destCell, chains)) {
+                        break;
+                    }
+                }
+                if (chains.size() == n) {
+                    return chains;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean findForcingChain2(Cell startCell, Cell destCell, List<LinkedList<LinkNode>> chains) {
+        LinkedList<LinkNode> starts = new LinkedList<>();
+        LinkedList<LinkNode> ends = new LinkedList<>();
+        starts.add(new LinkNode(startCell));
+        ends.add(new LinkNode(destCell));
+        if (!startCell.equals(destCell)) {
+            if (starts.getFirst().weakLink(ends.getLast())) {
+                starts.addAll(ends);
+                chains.add(starts);
+                return true;
+            }
+            LinkedList<LinkNode> chain = findSteps(starts, ends);
+            if (chain != null) {
+                chains.add(chain);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void toggleAls() {
+        alsSize = alsSize + 1 > 4 ? 1 : alsSize + 1;
+        Debug.println(String.format("alsSize=%d", alsSize));
+    }
+
+    public static void toggleSteps() {
+        maxSteps = maxSteps + 2 > 10 ? 4 : maxSteps + 2;
+        Debug.println(String.format("maxSteps=%d", maxSteps));
     }
 }

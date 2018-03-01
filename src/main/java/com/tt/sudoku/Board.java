@@ -86,7 +86,7 @@ public class Board extends JPanel {
     }
 
     public void paintChain(List<LinkNode> list) {
-        if (list.size() <= 2) return;
+//        if (list.size() <= 2) return;
         Graphics g = getGraphics();
         g.setColor(Color.red);
         int cellWidth = getCellWidth();

@@ -11,13 +11,17 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MyKeyListener extends KeyAdapter {
+    static ExecutorService es = Executors.newSingleThreadExecutor();
+
     @Override
     public void keyPressed(KeyEvent e) {
         super.keyPressed(e);
         if ((e.getKeyCode() == KeyEvent.VK_F) && ((e.getModifiers() & KeyEvent.ALT_MASK) == 0)) {
-            handleFind();
+            es.submit(() -> handleFind());
         }
         if ((e.getKeyCode() == KeyEvent.VK_R) && ((e.getModifiers() & KeyEvent.ALT_MASK) == 0)) {
             handleRefresh();
@@ -31,11 +35,19 @@ public class MyKeyListener extends KeyAdapter {
         if ((e.getKeyCode() == KeyEvent.VK_S) && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0)) {
             handleSave();
         }
-        if (e.getKeyCode() == KeyEvent.VK_F12) {
-            ChainSolver.forcingChain();
+        if (e.getKeyCode() == KeyEvent.VK_F1) {
+            ChainSolver.toggleSteps();
         }
-        if (e.getKeyCode() == KeyEvent.VK_S) {
-            ChainSolver.reset();
+        if (e.getKeyCode() == KeyEvent.VK_F2) {
+            ChainSolver.toggleAls();
+        }
+        if (e.getKeyCode() == KeyEvent.VK_F12) {
+            es.submit(() -> ChainSolver.forcingChain());
+        }
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+            Debug.println("cancelled..");
+            es.shutdownNow();
+            es = Executors.newSingleThreadExecutor();
         }
     }
 
@@ -130,16 +142,7 @@ public class MyKeyListener extends KeyAdapter {
         if (!ChainSolver.findChain()) {
             Debug.println("no chains found!!");
             ChainSolver.maxSteps += 2;
-            if (ChainSolver.maxSteps > 10) {
-                ChainSolver.maxSteps = 4;
-                ChainSolver.alsEnabled = true;
-                Debug.println(String.format("== ALS enabled size-%d ==", ChainSolver.alsSize));
-            }
-            if (ChainSolver.alsEnabled && ChainSolver.maxSteps > 8) {
-                ChainSolver.alsSize++;
-                ChainSolver.maxSteps = 4;
-                Debug.println(String.format("== ALS enabled size-%d ==", ChainSolver.alsSize));
-            }
+            Debug.println("maxSteps=" + ChainSolver.maxSteps);
         }
     }
 }
